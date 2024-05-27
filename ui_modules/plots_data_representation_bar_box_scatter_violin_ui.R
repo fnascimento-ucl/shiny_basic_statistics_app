@@ -90,13 +90,6 @@ plots_data_representation_bar_box_scatter_violin_ui <- function() {
                  column(width = 2, div(actionButton("reset_box_bar_scatter_violin", "Clear plot", icon = icon("trash")), style = "margin-left: 10px;"))
                )
              ),
-               
-               # bsTooltip(id ="group_order_box_bar_scatter_violin",
-               #           title = "Bonjour!",
-               #           placement = "right",
-               #           trigger = "hover"),
-
-            
              
              # bootstrapped effect size options
              conditionalPanel(
@@ -139,7 +132,6 @@ plots_data_representation_bar_box_scatter_violin_ui <- function() {
                  condition = "input.number_effect_sizes_box_bar_scatter_violin == 1 || input.number_effect_sizes_box_bar_scatter_violin == 2",
                  selectInput("position_plot_mean_median_diff_box_bar_scatter_violin", "Select position for mean/median diff effect size:", choices = list("Aligned with mean/median", "Below data")),
                ),
-               
                conditionalPanel(
                  condition = "input.submit_plot_box_bar_scatter_violin > 0 && input.number_effect_sizes_box_bar_scatter_violin >= 1",
                  fluidRow(
@@ -149,6 +141,7 @@ plots_data_representation_bar_box_scatter_violin_ui <- function() {
                )
              )
            ),
+           
            # Main panel display
            mainPanel(
              tabsetPanel(
@@ -165,8 +158,7 @@ plots_data_representation_bar_box_scatter_violin_ui <- function() {
                  # table for brushed points
                  tableOutput("box_bar_scatter_violin_brush_selection")
                  ),
-                 # # table for summary data (STILL WORKING ON IT)
-                 # tableOutput("data_box_bar_scatter_violin_plot_rendered"),
+                 
                  # error message if plot is not displayed
                  verbatimTextOutput("box_bar_scatter_violin_error_message"),
                  # adds numeric inputs for plot
@@ -188,7 +180,7 @@ plots_data_representation_bar_box_scatter_violin_ui <- function() {
                    conditionalPanel(
                      condition = "input.submit_box_bar_scatter_violin_with_effect_sizes > 0",
                      downloadButton("download_box_bar_scatter_violin_effect_sizes", "Download plot with effect sizes"),
-                     downloadButton("download_box_bar_scatter_violin_table_all", "Download plotted data"),
+                     downloadButton("download_box_bar_scatter_violin_table_all", "Download effect size summary"),
                    )
                  ),
                  #Modal for

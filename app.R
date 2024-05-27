@@ -2,7 +2,6 @@
 ################################################################################
 
 #load packages
-#source("C:/Users/filip/Documents/Basic_statistics_for_basic_neuroscientists/packages.R")
 source("packages.R")
 
 ################################################################################                                   
@@ -71,19 +70,6 @@ server <- function(input, output, session) {
         file_ext <- tools::file_ext(input$data_file$name)
         if (tolower(file_ext) == "xlsx" || tolower(file_ext) == "xls") {
           # Read a sheet from an Excel file
-            # finds names of sheets
-            # sheet_names <- excel_sheets(input$data_file$datapath)
-            # 
-            # # updates select input for sheet selection
-            # updateSelectInput(session, "selected_sheet_table", choices = sheet_names, selected = sheet_names[1])
-            # 
-            # if (!any(input$selected_sheet_table %in% sheet_names)){
-            #   
-            # }
-            # # input for selected sheet
-            # selected_sheet <- input$selected_sheet_table
-            # 
-            # read_excel(input$data_file$datapath, sheet = selected_sheet) %>%
               read_excel(input$data_file$datapath) %>%
               mutate_if(is.character, as.factor) # Convert character columns to factor
         } else if (tolower(file_ext) == "csv") {
@@ -100,6 +86,7 @@ server <- function(input, output, session) {
     observeEvent(input$data_file,{
       # removes previous plot
       output$table_plot <- renderPlot({NULL})
+      
       # hides numeric inputs for plot size
       shinyjs::hide("height_plot_table")
       shinyjs::hide("width_plot_table")
@@ -114,7 +101,6 @@ server <- function(input, output, session) {
       updateCheckboxInput(session, "geom_smooth_table", value = FALSE)
       shinyjs::reset("additional_group_order_table")
       shinyjs::reset("group_order_table")
-      
       
       # disables options
       shinyjs::disable("options_table")
@@ -148,6 +134,7 @@ server <- function(input, output, session) {
     # Create reactive data for selected variables
     selected_vars <- reactive({
       req(data_table(), input$var_select, input$data_file)
+      
       #check if  selected variables are in uploaded data (avoids error when new file is uploaded)
       if (all(input$var_select %in% colnames(data_table()))) {
         selected_data <- data_table() %>%
@@ -182,13 +169,16 @@ server <- function(input, output, session) {
       j <- info$col + 1
       v <- info$value
       new_edited_data <- edited_data()
+      
+      # initialize edited_data if it is null
       if (is.null(new_edited_data)) {
-        # initialize edited_data if it is null
         new_edited_data <- data_table()
       }
+      
       #converts factor to character to allow coercion
       new_edited_data <- as.data.frame(lapply(new_edited_data, function(x) if(is.factor(x)) as.character(x) else x))
       new_edited_data[i, j] <- myCoerceValue(v, new_edited_data[i, j])
+      
       #converts characters to factors before updating table
       new_edited_data <- as.data.frame(lapply(new_edited_data, function(x) if(is.character(x)) as.factor(x) else x))
       edited_data(new_edited_data)
@@ -197,6 +187,7 @@ server <- function(input, output, session) {
     # Render data table
     output$data_table <- renderDT({
       req(data_table(), selected_vars)
+      
       if (!is.null(input$var_select) && all(input$var_select %in% colnames(data_table()))) {
         selected_cols <- c(match(input$var_select, colnames(data_table())))
         if (!is.null(edited_data())) {
@@ -301,8 +292,8 @@ server <- function(input, output, session) {
           dplyr::select(input$x_axis, input$y_axis)
         names(data) <- c(input$x_axis, input$y_axis)
       }
-      
       data
+      
       # adds paired_observations column if not already present
       if (is.null(edited_data()) && input$repeated_observations_table == TRUE && !is.null(input$paired_observations_table) && input$paired_observations_table != ""){
         # Check if paired_observations_table column already exists
@@ -374,6 +365,7 @@ server <- function(input, output, session) {
           data <- edited_data()
         }
       req(input$x_axis %in% names(data) && input$y_axis %in% names(data))
+      
       # filters data based on previous selection
       if (input$show_additional_group_legend_table == TRUE) {
         # filters data based on group_order
@@ -416,7 +408,6 @@ server <- function(input, output, session) {
       }
     })
     
-    
     #Resets y and x axis labels when variables are changed
       observeEvent(input$y_axis,{
         updateTextInput(session, "y_axis_text_title_table", value = input$y_axis)
@@ -454,17 +445,6 @@ server <- function(input, output, session) {
         # enables options button
         shinyjs::enable("options_table")
         
-        ## disables plot button
-        #shinyjs::disable("submit_plot_table")
-        
-        
-        # for brushed points when plotting
-        # output$table_brush_selection <- renderTable({
-        #   brushedPoints(brushed_points_table(), input$table_plot_brush, xvar = input$x_axis, yvar = input$y_axis)
-        # })
-        
-        
-        
         # renders warning text null
         output$uploaded_file_extension_error <- renderText({NULL})
         output$table_error_message <- renderText({NULL})
@@ -477,7 +457,6 @@ server <- function(input, output, session) {
         
       }, error = function(e) {
         output$table_error_message <- renderText({"Plot could not be generated. Please check data and format selections"})
-        
       })
     })
     
@@ -515,12 +494,12 @@ server <- function(input, output, session) {
     
     # resets plot and display options everytime a new file is uploaded
     observeEvent(input$data_file_icc,{
+      
       # hides inputs and resets plots and error text messages when new file is uploaded
       output$icc_plot <- renderPlot({return(NULL)})
       output$icc_two_plot <- renderPlot({return(NULL)})
       output$data_table_icc_two_lmm <- renderUI({return(NULL)})
       output$data_table_icc <- renderUI({return(NULL)})
-      
       output$icc_error_message <- renderText({NULL})
       output$error_message_icc_data <- renderText({NULL})
       
@@ -537,10 +516,17 @@ server <- function(input, output, session) {
       # hides numeric inputs for plot size
       shinyjs::hide("height_plot_icc")
       shinyjs::hide("width_plot_icc")
+      shinyjs::hide("height_plot_icc_two")
+      shinyjs::hide("width_plot_icc_two")
       
       # hides brushoptions
       shinyjs::hide("icc_brush_selection")
       shinyjs::hide("icc_two_brush_selection")
+      
+      # updates action button
+      updateActionButton(session, "submit_plot_icc_two", "Calculate LMM", icon = icon("chart-simple"))
+      updateActionButton(session, "submit_plot_icc", "Calculate ICC", icon = icon("chart-simple"))
+      
     })
     
     # hides group and level section until file is uploaded
@@ -563,6 +549,7 @@ server <- function(input, output, session) {
                  (input$y_var_icc %in% names(data_icc())), label = ""
           )
         )
+        
         #gets variables from selection
         if (input$num_levels == 2){
           data <- data_icc() %>%
@@ -600,13 +587,6 @@ server <- function(input, output, session) {
     observe({
       req(!is.null(data_icc()))
       updateSelectInput(session, "group_var_icc", "Select the grouping variable", choices = colnames(data_icc()), selected = input$group_var_icc)
-      
-      # # shows message if column is empty
-      # if (input$group_var_icc == ""){
-      #   shinyFeedback::feedbackWarning(inputId = "group_var_icc", session = shiny::getDefaultReactiveDomain(), text = "This variable is empty or has no column name assigned", show = TRUE)
-      # } else {
-      #   hideFeedback("group_var_icc")
-      # }
     })
     
     # Populate x_axis group order selection
@@ -620,52 +600,24 @@ server <- function(input, output, session) {
     observe({
       req(data_icc(), input$group_var_icc)
       updateSelectInput(session, "x_var_icc", "Select the column for level 1", choices = colnames(data_icc())[colnames(data_icc()) != input$group_var_icc], selected = input$x_var_icc)
-      
-      # # shows message if column is empty
-      # if (input$x_var_icc == ""){
-      #   shinyFeedback::feedbackWarning(inputId = "x_var_icc", session = shiny::getDefaultReactiveDomain(), text = "This variable is empty or has no column name assigned", show = TRUE)
-      # } else {
-      #   hideFeedback("x_var_icc")
-      # }
     })
     
     # Populate level 2 column dropdown menu
     observe({
       req(data_icc(), input$group_var_icc, input$x_var_icc)
       updateSelectInput(session, "y_var_icc", "Select the column for level 2", choices = colnames(data_icc())[colnames(data_icc()) != input$group_var_icc & colnames(data_icc()) != input$x_var_icc], selected = input$y_var_icc)
-      
-      # # shows message if column is empty
-      # if (input$y_var_icc == ""){
-      #   shinyFeedback::feedbackWarning(inputId = "y_var_icc", text = "This variable is empty or has no column name assigned", show = TRUE)
-      # } else {
-      #   hideFeedback("y_var_icc")
-      # }
     })
     
     # Populate level 3 column dropdown menu
     observe({
       req(data_icc(), input$group_var_icc, input$x_var_icc, input$y_var_icc)
       updateSelectInput(session, "z_var_icc", "Select the column for level 3", choices = colnames(data_icc())[colnames(data_icc()) != input$group_var_icc & colnames(data_icc()) != input$x_var_icc & colnames(data_icc()) != input$y_var_icc], selected = input$z_var_icc)
-      
-      # # shows message if column is empty
-      # if (input$z_var_icc == ""){
-      #   shinyFeedback::feedbackWarning(inputId = "z_var_icc", text = "This variable is empty or has no column name assigned", show = TRUE)
-      # } else {
-      #   hideFeedback("z_var_icc")
-      # }
     })
     
     # Populate level 4 column dropdown menu
     observe({
       req(data_icc(), input$group_var_icc, input$x_var_icc, input$y_var_icc, input$z_var_icc)
       updateSelectInput(session, "w_var_icc", "Select the column for level 4", choices = colnames(data_icc())[colnames(data_icc()) != input$group_var_icc & colnames(data_icc()) != input$x_var_icc & colnames(data_icc()) != input$y_var_icc & colnames(data_icc()) != input$z_var_icc], selected = input$w_var_icc)
-      
-      # # shows message if column is empty
-      # if (input$w_var_icc == ""){
-      #   shinyFeedback::feedbackWarning(inputId = "w_var_icc", text = "This variable is empty or has no column name assigned", show = TRUE)
-      # } else {
-      #   hideFeedback("w_var_icc")
-      # }
     })
     
     # Adjusts choices for number of levels selected for each tab
@@ -691,7 +643,6 @@ server <- function(input, output, session) {
       } else {
         updateSelectInput(session, "control_group_var_icc", "Select control group", choices = character(0))
       }
-      
     })
     
     # Populate repeated measures dropdown selection for LMM
@@ -701,6 +652,93 @@ server <- function(input, output, session) {
         updateSelectInput(session, "repeated_var_icc", "Select repeated measures column", choices = colnames(data_icc())[colnames(data_icc()) != input$group_var_icc & colnames(data_icc()) != input$x_var_icc])
       }
     })
+    
+    # disables buttons until variables are selected
+    observe({
+      req(data_icc())
+      # Check if all variables are present in data_plot()
+      if (input$num_levels == 2){
+        # disables and enables reset and submit plot buttons
+        if (all(c(input$y_var_icc, input$x_var_icc, input$group_var_icc, input$y_var_icc) %in% names(data_icc()))) {
+          # Enable the button if all variables are present
+          shinyjs::enable("submit_plot_icc")
+          shinyjs::enable("clear_icc")
+          shinyjs::enable("options_icc")
+          shinyjs::enable("submit_plot_icc_two")
+          shinyjs::enable("clear_icc_two")
+          shinyjs::enable("options_icc_two")
+        } else {
+          # Disable the button if any variable is missing
+          shinyjs::disable("submit_plot_icc")
+          shinyjs::disable("clear_icc")
+          shinyjs::disable("options_icc")
+          shinyjs::disable("submit_plot_icc_two")
+          shinyjs::disable("clear_icc_two")
+          shinyjs::disable("options_icc_two")
+        }
+      } else if (input$num_levels == 3){
+        # disables and enables reset and submit plot buttons
+        if (all(c(input$z_var_icc, input$y_var_icc, input$x_var_icc, input$group_var_icc, input$y_var_icc) %in% names(data_icc()))) {
+          # Enable the button if all variables are present
+          shinyjs::enable("submit_plot_icc")
+          shinyjs::enable("clear_icc")
+          shinyjs::enable("options_icc")
+          shinyjs::enable("submit_plot_icc_two")
+          shinyjs::enable("clear_icc_two")
+          shinyjs::enable("options_icc_two")
+        } else {
+          # Disable the button if any variable is missing
+          shinyjs::disable("submit_plot_icc")
+          shinyjs::disable("clear_icc")
+          shinyjs::disable("options_icc")
+          shinyjs::disable("submit_plot_icc_two")
+          shinyjs::disable("clear_icc_two")
+          shinyjs::disable("options_icc_two")
+        }
+      } else if (input$num_levels == 4){
+        # disables and enables reset and submit plot buttons
+        if (all(c(input$w_var_icc, input$z_var_icc, input$y_var_icc, input$x_var_icc, input$group_var_icc, input$y_var_icc) %in% names(data_icc()))) {
+          # Enable the button if all variables are present
+          shinyjs::enable("submit_plot_icc")
+          shinyjs::enable("clear_icc")
+          shinyjs::enable("options_icc")
+          shinyjs::enable("submit_plot_icc_two")
+          shinyjs::enable("clear_icc_two")
+          shinyjs::enable("options_icc_two")
+        } else {
+          # Disable the button if any variable is missing
+          shinyjs::disable("submit_plot_icc")
+          shinyjs::disable("clear_icc")
+          shinyjs::disable("options_icc")
+          shinyjs::disable("submit_plot_icc_two")
+          shinyjs::disable("clear_icc_two")
+          shinyjs::disable("options_icc_two")
+        }
+      }
+    })
+    
+    # Changes ICC Calculate button name if plot has been generated
+    observeEvent(c(input$input$group_var_icc, input$x_var_icc, input$y_var_icc),{
+                     if (exists("plot_for_all_icc") && tab_id() == "icc"){
+                       if (is.ggplot(plot_for_all_icc()) && !is.null(plot_for_all_icc())){ 
+                         updateActionButton(session, "submit_plot_icc", "Re-calculate ICC", icon = icon("chart-simple"))
+                       } else {
+                         updateActionButton(session, "submit_plot_icc", "Calculate ICC", icon = icon("chart-simple"))
+                       }
+                     }
+                   })
+    
+    # Changes LMM Calculate button name if plot has been generated
+    observeEvent(c(input$input$group_var_icc, input$x_var_icc, input$y_var_icc, input$z_var_icc, input$w_var_icc, input$manual_lmm,
+                   input$repeated_var_icc_selection, input$repeated_var_icc, input$control_group_var_icc, input$effect_size_lmm, input$group_order_icc_two),{
+                       if (exists("plot_for_all_icc_two") && tab_id() == "icc_two"){
+                         if (is.ggplot(plot_for_all_icc_two()) && !is.null(plot_for_all_icc_two())){ 
+                           updateActionButton(session, "submit_plot_icc_two", "Re-calculate LMM", icon = icon("chart-simple"))
+                         } else {
+                           updateActionButton(session, "submit_plot_icc_two", "Calculate LMM", icon = icon("chart-simple"))
+                         }
+                       }
+                   })
     
     # creates variables to store ICC and LMM values to avoid running the same code
     # for names of variables
@@ -721,7 +759,6 @@ server <- function(input, output, session) {
     # For ICC
       #Clear ICC plot
       observeEvent(input$clear_icc,{
-        
         # hides plots, buttons, error messages and tables
         output$icc_plot <- renderPlot({return(NULL)})
         output$data_table_icc <- renderUI({return(NULL)})
@@ -732,6 +769,8 @@ server <- function(input, output, session) {
         shinyjs::hide("height_plot_icc")
         shinyjs::hide("width_plot_icc")
         shinyjs::hide("icc_brush_selection")
+        
+        updateActionButton(session, "submit_plot_icc", "Calculate ICC", icon = icon("chart-simple"))
       })
       
       # To avoid ongoing spinner when the table is first generated
@@ -1011,7 +1050,6 @@ server <- function(input, output, session) {
               selected_colors_boxplot_fill_icc$colors <- random_colours
               # sets legend in place
               updateSelectInput(session, paste0("maginal_plot_legend_", tab_id), label = "Legend position", choices = c("none", "left","top", "right", "bottom", "custom"), selected = "right")
-              
             })
           }
         }
@@ -1036,6 +1074,9 @@ server <- function(input, output, session) {
         shinyjs::hide("height_plot_icc_two")
         shinyjs::hide("width_plot_icc_two")
         shinyjs::hide("icc_two_brush_selection")
+        
+        # updates action button
+        updateActionButton(session, "submit_plot_icc_two", "Calculate LMM", icon = icon("chart-simple"))
       })
 
       # To avoid ongoing spinner when the table is first generated
@@ -1126,10 +1167,8 @@ server <- function(input, output, session) {
             y_var_icc_lmm() != input$y_var_icc ||  z_var_icc_lmm() != input$z_var_icc ||
             w_var_icc_lmm() != input$w_var_icc || (isTRUE(input$repeated_var_icc_selection) && manual_lmm_formula() != input$manual_lmm) ||
             repeated_lmm() != input$repeated_var_icc || control_group_lmm() != input$control_group_var_icc ||
-            effect_size_lmm() != input$effect_size_lmm || #isTRUE(group_order_lmm() != input$additional_group_order_icc_two) ||
-            isFALSE(any(group_order_lmm() %in% input$group_order_icc_two)) ||
-            !identical(group_order_lmm(), input$additional_group_order_icc_two) ||
-            #(!is.null(input$additional_group_order_icc_two) && !is.null(group_order_lmm()) && isTRUE(group_order_lmm() != input$additional_group_order_icc_two)) ||
+            effect_size_lmm() != input$effect_size_lmm ||
+            !setequal(group_order_lmm(), input$group_order_icc_two) ||
             isTRUE(data_icc_lmm() != data_icc()))  {
         
           # updates names of variables
@@ -1146,7 +1185,7 @@ server <- function(input, output, session) {
           effect_size_lmm(input$effect_size_lmm)
           
           # filters data based on group_order
-          if (!is.null(input$additional_group_order_icc_two)) {
+          if (!is.null(input$group_order_icc_two)) {
             data_lmm <- data_icc() %>%
               filter(!!as.name(input$group_var_icc) %in% input$group_order_icc_two)
           } else {
@@ -1481,67 +1520,65 @@ server <- function(input, output, session) {
       tryCatch({
         req(!is.null(input$data_file_superplot) || !is.null(input$data_file_box_bar_scatter_violin))
         
-        # hides inputs and resets plots and error text messages when new file is uploaded
-        output$box_bar_scatter_violin_plot <- renderPlot({return(NULL)})
-        output$box_bar_scatter_violin_plot_with_effect_size <- renderPlot({return(NULL)})
-        shinyjs::hide("download_box_bar_scatter_violin")
-        shinyjs::hide("download_box_bar_scatter_violin_effect_sizes")
-        shinyjs::hide("download_box_bar_scatter_violin_table_all")
-        output$error_message_box_bar_scatter_violin_data <- renderText({NULL})
-        output$box_bar_scatter_violin_error_message <- renderText({NULL})
-        output$box_bar_scatter_violin_effect_size_table <- renderUI({NULL})
-        shinyjs::hide("show_additional_group_legend_superplot")
-        
-        #resets inputs and plot when new file is uploaded
-        for (input_id in input_ids_to_reset()) {
-          shinyjs::reset(input_id)
-        }
-        bar_box_scatter_violin_plot <- NULL
-        output$box_bar_scatter_violin_plot_rendered = NULL
         #For superplot and box/bar/violin/raincloud plot
         if (!is.null(input$data_file_superplot)) {
+          file_ext <- tools::file_ext(input$data_file_superplot$name)
+          if (tolower(file_ext) == "xlsx" || tolower(file_ext) == "xls") {
+            # Read an Excel file
           read_excel(input$data_file_superplot$datapath)%>%
             mutate_if(is.character, as.factor) # Convert character columns to factor
+          } else if (tolower(file_ext) == "csv") {
+            # Read a CSV file
+            read.csv(input$data_file_superplot$datapath) %>%
+              mutate_if(is.character, as.factor) # Convert character columns to factor
+          } else {
+            # Display a message for unsupported file types
+            output$error_message_superplot_data <- renderText({"Wrong file uploaded, please upload an Excel (.xlsx or .xls) or CSV (.csv) file"})
+          }
         } else if (!is.null(input$data_file_box_bar_scatter_violin)) {
+          file_ext <- tools::file_ext(input$data_file_box_bar_scatter_violin$name)
+          if (tolower(file_ext) == "xlsx" || tolower(file_ext) == "xls") {
+            # Read an Excel file
           read_excel(input$data_file_box_bar_scatter_violin$datapath)%>%
             mutate_if(is.character, as.factor)
+          } else if (tolower(file_ext) == "csv") {
+            # Read an Excel file
+            read.csv(input$data_file_box_bar_scatter_violin$datapath)%>%
+              mutate_if(is.character, as.factor)
+          } else {
+            output$error_message_box_bar_scatter_violin_data <- renderText({"Wrong file uploaded, please upload an Excel (.xlsx or .xls) or CSV (.csv) file"})
+          }
         }
       }, error = function(e) {
-        output$error_message_box_bar_scatter_violin_data <- renderText({"An error ocurred with your data file upload. Please check your data structure and column names"})
+        if (tab_id() == "box_bar_scatter_violin"){
+          output$error_message_box_bar_scatter_violin_data <- renderText({"An error ocurred with your data file upload. Please check your data structure and column names"})
+        } else if (tab_id() == "superplot"){
+          output$error_message_superplot_data <- renderText({"An error ocurred with your data file upload. Please check your data structure and column names"})
+        }
       })
     })
     
     # For superplot 
       #resets inputs and plot when new file is uploaded  
       observeEvent(input$data_file_superplot,{
+        
         # renders all plots, messages and tables as NULL
-        output$superplot_plot <- renderPlot({return(NULL)})
-        output$superplot_plot_with_effect_sizes <- renderPlot({return(NULL)})
-        #output$data_superplot_plot_rendered <- renderUI({return(NULL)})
         output$error_message_superplot_data <- renderText({NULL})
         output$superplot_error_message <- renderText({NULL})
         output$superplot_effect_size_table <- renderUI({NULL})
         
         # hides buttons
-        shinyjs::hide("download_data_superplot_plot_rendered")
-        shinyjs::hide("download_data_superplot_plot_rendered_effect_sizes")
-        shinyjs::hide("download_box_bar_scatter_violin_table_all")
+        shinyjs::hide("download_superplot_effect_sizes")
+        shinyjs::hide("download_superplot")
+        shinyjs::hide("download_superplot_table_all")
         shinyjs::hide("show_additional_group_legend_superplot")
-        shinyjs::hide("superplot_brush_selection")
         shinyjs::hide("options_superplot")
         shinyjs::reset("test_groups_superplot")
         shinyjs::hide("height_plot_superplot")
         shinyjs::hide("width_plot_superplot")
-        
+      
         # # restores selection
-        # updateSelectInput(session, "num_levels_box_bar_scatter_violin", "Select the number of levels in your data", choices = c(1, 2, 3, 4))
-        updateSelectInput(session, "number_effect_sizes_box_bar_scatter_violin",  "Number of effect sizes to display:", choices =c(0,1,2), selected = 0)
-        # updateNumericInput(session, "n_boot_box_bar_scatter_violin", "Number of boostrap samples:", value = NULL)
-        # updateCheckboxInput(session, "repeated_observations_box_bar_scatter_violin", "Paired observations?", value = FALSE)
-        # updateSelectInput(session, "paired_observations_box_bar_scatter_violin", "Select column for paired observations", "")
-        # updateSelectInput(session, "control_group_box_bar_scatter_violin", "Select control group", choices = NULL, selected = NULL)
-        # updateSelectInput(session, "test_groups_box_bar_scatter_violin", "Select test group(s) and their order", choices = NULL, selected = NULL)
-        
+        updateSelectInput(session, "number_effect_sizes_superplot",  "Number of effect sizes to display:", choices =c(0,1,2), selected = 0)
       })
       
       # hides selection for superplot until file is uploaded
@@ -1554,66 +1591,79 @@ server <- function(input, output, session) {
       #Populate grouping variable dropdown menu
       observe({
         req(data_plot())
-        updateSelectInput(session, "group_var_superplot", "Select the grouping variable", choices = colnames(data_plot()))
+        updateSelectInput(session, "group_var_superplot", "Select the grouping variable", choices = colnames(data_plot()), selected = input$group_var_superplot)
       })
       
       # Populate level 1 column dropdown menu
       observe({
         req(data_plot(), input$group_var_superplot)
-        updateSelectInput(session, "x_var_superplot", "Select the column for level 1", choices = colnames(data_plot())[colnames(data_plot()) != input$group_var_superplot])
+        updateSelectInput(session, "x_var_superplot", "Select the column for level 1", choices = colnames(data_plot())[colnames(data_plot()) != input$group_var_superplot], selected = input$x_var_superplot)
       })
-      
+
       # Populate level 2 column dropdown menu
       observe({
         req(data_plot(), input$group_var_superplot, input$x_var_superplot)
-        updateSelectInput(session, "y_var_superplot", "Select the column for level 2", choices = colnames(data_plot())[colnames(data_plot()) != input$group_var_superplot & colnames(data_plot()) != input$x_var_superplot])
-        updateSelectInput(session, "y_var_box_bar_scatter_violin", "Select the column for additional grouping", choices = colnames(data_plot())[colnames(data_plot()) != input$group_var_box_bar_scatter_violin & colnames(data_plot()) != input$x_var_box_bar_scatter_violin])
+        updateSelectInput(session, "y_var_superplot", "Select the column for level 2", choices = colnames(data_plot())[colnames(data_plot()) != input$group_var_superplot & colnames(data_plot()) != input$x_var_superplot], selected = input$y_var_superplot)
+        updateSelectInput(session, "y_var_box_bar_scatter_violin", "Select the column for additional grouping", choices = colnames(data_plot())[colnames(data_plot()) != input$group_var_box_bar_scatter_violin & colnames(data_plot()) != input$x_var_box_bar_scatter_violin], selected = input$y_var_box_bar_scatter_violin)
       })
       
       # Populate group order
       observe({
-        req(input$submit_plot_superplot, data_plot(), input$group_var_superplot, input$x_var_superplot)
+        req(data_plot(), input$group_var_superplot, input$x_var_superplot)
         updateSelectInput(session, "group_order_superplot", "Select order and variables to show", choices = na.omit(data_plot()[[input$group_var_superplot]]))
       })
       
-      # # Populate additional group selection
-      # observe({
-      #   req(input$submit_plot_superplot, data_plot(), input$group_var_superplot, input$x_var_superplot)
-      #     updateSelectInput(session, "additional_variable_superplot", "Select the column for additional grouping variable", choices = colnames(data_plot())[colnames(data_plot()) != input$group_var_superplot & colnames(data_plot()) != input$x_var_superplot & colnames(data_plot()) != input$y_var_superplot])
-      # })
-      
+      # disables buttons until variables are selected
+      observe({
+        req(data_plot())
+        # Check if all variables are present in data_plot()
+        if (all(c(input$group_var_superplot, input$x_var_superplot, input$y_var_superplot) %in% names(data_plot()))) {
+          # Enable the button if all variables are present
+          shinyjs::enable("submit_plot_superplot")
+          shinyjs::enable("reset_superplot")
+          shinyjs::enable("submit_superplot_with_effect_sizes")
+          shinyjs::enable("reset_superplot_with_effect_sizes")
+        } else {
+          # Disable the button if any variable is missing
+          shinyjs::disable("submit_plot_superplot")
+          shinyjs::disable("reset_superplot")
+          shinyjs::enable("submit_superplot_with_effect_sizes")
+          shinyjs::enable("reset_superplot_with_effect_sizes")
+        }
+      })
+
       # Populate additional group order
       observe({
-        req(input$submit_plot_superplot, data_plot(), input$group_var_superplot, input$x_var_superplot)
-        
-        # filters data based on previous selection
-        if (input$show_additional_group_legend_superplot == TRUE) {
-          data <- data_plot()
-          # filters data based on group_order
-          if (!is.null(input$group_order_superplot)) {
-            filtered_data <- data %>%
-              filter(!!as.name(input$group_var_superplot) %in% input$group_order_superplot)
-          } else {
-            filtered_data <- data
+        req(data_plot(), input$group_var_superplot, input$x_var_superplot)
+        if (tab_id() == "superplot"){
+          # filters data based on previous selection
+          if (input$show_additional_group_legend_superplot == TRUE) {
+            data <- data_plot()
+            # filters data based on group_order
+            if (!is.null(input$group_order_superplot) && all(input$group_order_superplot %in% data[[input$group_var_superplot]])) {
+              filtered_data <- data %>%
+                filter(!!as.name(input$group_var_superplot) %in% input$group_order_superplot)
+            } else {
+              filtered_data <- data
+            }
+            
+            # Filter choices for additional group order based on selected groups
+            filtered_choices <- unique(na.omit(filtered_data[[input$x_var_superplot]]))
+            updateSelectInput(session, "additional_group_order_superplot", "Select order and variables to shows", choices = filtered_choices)
           }
-          
-          # updates checkbox name
-          # updateCheckboxInput(session, "show_additional_group_legend_superplot", label = paste0("Select additional grouping for ", input$x_var_superplot))
-          # Filter choices for additional group order based on selected groups
-          filtered_choices <- unique(na.omit(filtered_data[[input$x_var_superplot]]))
-          updateSelectInput(session, "additional_group_order_superplot", "Select order and variables to shows", choices = filtered_choices)
         }
+        
       })
       
       # Populate repeated measures variable
       observe({
         req(input$submit_plot_superplot, data_plot(), input$group_var_superplot, input$x_var_superplot)
-        updateSelectInput(session, "paired_observations_box_bar_scatter_violin", "Select column for paired observations", choices = colnames(data_plot())[colnames(data_plot()) != input$group_var_superplot & colnames(data_plot()) != input$x_var_superplot & colnames(data_plot()) != input$y_var_superplot])
+        updateSelectInput(session, "paired_observations_superplot", "Select column for paired observations", choices = colnames(data_plot())[colnames(data_plot()) != input$group_var_superplot & colnames(data_plot()) != input$x_var_superplot & colnames(data_plot()) != input$y_var_superplot])
       })
       
       # observe for different colour coding when plot is generated for the first time
       observeEvent(input$x_var_superplot,{
-        #req(input$x_var_superplot >0)
+        
         if (input$navpage == 'Superplot') {
           tab_id = "superplot"
           data <- data_plot()
@@ -1643,31 +1693,53 @@ server <- function(input, output, session) {
         req(data_plot(), input$group_var_superplot, input$x_var_superplot, tab_id() == "superplot")
         
         # filters data based on group_order
-        if (!is.null(input$group_order_superplot)) {
+        if (!is.null(input$group_order_superplot) && all(input$group_order_superplot %in% data_plot()[[input$group_var_superplot]])) {
           filtered_data <- data_plot() %>%
             filter(!!as.name(input$group_var_superplot) %in% input$group_order_superplot)
         } else {
           filtered_data <- data_plot()
         }
         
-        
         updateSelectInput(session, "control_group_superplot", "Select control group", choices = filtered_data[[input$group_var_superplot]])
         updateSelectInput(session, "test_groups_superplot", "Select test group(s) and their order", choices = setdiff(filtered_data[[input$group_var_superplot]], input$control_group_superplot))
       })
       
+      # Changes button name if plot has been generated
+      observeEvent(c(input$bootstrap_option_superplot, input$n_boot_superplot, input$paired_observations_superplot,
+                     input$control_group_superplot, input$test_groups_superplot, input$effect_size_mean_median_superplot,
+                     input$effect_sizes_hedges_cohen_glass_superplot, input$position_plot_mean_median_diff_superplot,
+                     input$choose_superplot, input$group_var_superplot, input$group_order_superplot, input$num_levels_superplot,
+                     input$x_var_superplot, input$y_var_superplot, input$z_var_superplot, input$w_var_superplot,
+                     input$additional_variable_superplot, input$additional_group_order_superplot, input$maginal_plot_superplot, input$geom_smooth_scatter_superplot),{
+                       
+                       if (is.ggplot(superplot_with_effect_size_plot()) && !is.null(superplot_with_effect_size_plot())){ 
+                         updateActionButton(session, "submit_superplot_with_effect_sizes", "Update plot with effect sizes", icon = icon("ranking-star"))
+                       } else {
+                         updateActionButton(session, "submit_superplot_with_effect_sizes", "Plot data with effect sizes", icon = icon("ranking-star"))
+                       }
+                     })
+      
+      
       #Resets y and x axis labels when variables are changed
       observeEvent(input$y_var_superplot,{
-        if (input$num_levels_box_bar_scatter_violin == 2) {
+        #if (input$num_levels_box_bar_scatter_violin == 2) {
           updateTextInput(session, "y_axis_text_title_superplot", value = input$y_var_superplot)
-        }
+        #}
       })
       
       observeEvent(input$group_var_superplot,{
         updateTextInput(session, "x_axis_text_title_superplot", value = input$group_var_superplot)
       })
       
+      # # creates UI for spinner
+      # insertUI(selector = "body", where = "afterBegin", ui = tags$div(id = "spinner", style = "display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 9999;", "Loading..."))
+
       #Renders superplot after click
       observeEvent(input$submit_plot_superplot, {
+        # Show the spinner
+        #runjs('document.getElementById("spinner").style.display = "block";')
+        #show_spinner()
+        
         # adds tryCatch for any error that may occur
         tryCatch({ 
           #Renders Plot
@@ -1684,6 +1756,9 @@ server <- function(input, output, session) {
             shinyjs::show("width_plot_superplot")
             shinyjs::enable("options_superplot")
             
+            # shows download plot
+            shinyjs::show("download_superplot")
+            
             # if modal is not open
           } else if (input$modal_superplot != TRUE && !is.null(plot_for_all_superplot()) && click_count_superplot() == 0) {
             output$superplot_plot <- renderPlot({
@@ -1697,12 +1772,24 @@ server <- function(input, output, session) {
             shinyjs::show("options_superplot")
             shinyjs::show("download_superplot")
             shinyjs::enable("options_superplot")
+            
+            # shows download plot
+            shinyjs::show("download_superplot")
           }
           
           # hides plot with effect size
           shinyjs::hide("superplot_plot_with_effect_sizes")
+          hide_spinner("superplot_plot_with_effect_sizes")
           
+          
+          # hides effect size buttons
+          shinyjs::hide("download_superplot_effect_sizes")
+          shinyjs::hide("download_superplot_table_all")
+          
+          # resets superplot reset button count
           reset_info_superplot(0)
+          
+          updateActionButton(session, "submit_superplot_with_effect_sizes", "Plot data with effect sizes", icon = icon("ranking-star"))
           
           # shows plot if hidden
           shinyjs::show("superplot_plot")
@@ -1710,7 +1797,6 @@ server <- function(input, output, session) {
           # resets text messages
           output$superplot_error_message <- renderText({NULL})
           output$error_message_superplot_data <- renderText({NULL})
-          
           
           # Download the superplot
           output$download_superplot <- downloadHandler(
@@ -1721,20 +1807,18 @@ server <- function(input, output, session) {
             }
           )
           
-          # For brushed points when plotting (NEEDS FIXING)
-          shinyjs::show("superplot_brush_selection")
-          
-          
         },  error = function(e) {
           # disables plots, and buttons if plot is not rendered
           output$superplot_plot <- renderPlot({NULL})
           shinyjs::hide("download_superplot")
           shinyjs::hide("height_plot_superplot")
           shinyjs::hide("width_plot_superplot")
+          
           #table with data and results
           output$data_superplot_plot_rendered <- renderUI({NULL})
           shinyjs::disable("options_superplot")
           shinyjs::hide("superplot_brush_selection")
+          
           # if effect sizes are selected
           shinyjs::hide("download_superplot_effect_sizes")
           shinyjs::hide("download_superplot_table_all")
@@ -1760,7 +1844,7 @@ server <- function(input, output, session) {
       )
       
       # Reset superplot button
-      observeEvent(input$reset_superplot,{
+      observeEvent(c(input$reset_superplot, input$reset_superplot_with_effect_sizes),{
         tryCatch({
           
           # disables plots, and buttons if plot is not rendered
@@ -1769,36 +1853,37 @@ server <- function(input, output, session) {
           shinyjs::hide("height_plot_superplot")
           shinyjs::hide("width_plot_superplot")
           
+          shinyjs::hide("superplot_plot_with_effect_sizes")
+          hide_spinner("superplot_plot_with_effect_sizes")
+          
           #table with data and results
-          output$data_superplot_plot_rendered <- renderUI({NULL})
+          output$superplot_effect_size_table <- renderUI({NULL})
           shinyjs::hide("options_superplot")
-          shinyjs::hide("superplot_brush_selection")
+          #shinyjs::hide("superplot_brush_selection")
           
           #sets click count to zero
           click_count_superplot(0)
           
-          # if effect sizes are selected
+          #  if effect sizes are present
           output$superplot_plot_with_effect_sizes <- renderPlot({NULL})
           shinyjs::hide("download_superplot_effect_sizes")
           shinyjs::hide("download_superplot_table_all")
           output$superplot_effect_size_table <- renderUI({NULL})
           
+          
           # Reset specific input values using shinyjs::reset
           for (input_id in input_ids_to_reset()) {
-            shinyjs::reset(input_id)
+            if (!(input_id %in% c("geom_jitter_colour_fill_by_group_superplot", "geom_boxplot_colour_fill_by_group_superplot"))) {
+              shinyjs::reset(input_id)
+            }
           }
           
-            # # for symbol colour and fill
-            # for (i in seq_along(selected_colors_superplot$colors)) {updateColourInput(session, paste0("color_var_superplot", i), value = "black")}
-            # selected_colors_superplot$colors <- rep("black", length(selected_colors_superplot$colors))
-            # for (i in seq_along(selected_colours_symbol_fill_superplot$colors)) {updateColourInput(session, paste0("color_symbol_fill_var_superplot", i), value = "black")}
-            # selected_colours_symbol_fill_superplot$colors <- rep("black", length(selected_colours_symbol_fill_superplot$colors))
-            # updateSelectInput(session, "geom_jitter_colour_fill_by_group_superplot", selected = "Single Colour")
+          updateActionButton(session, "submit_superplot_with_effect_sizes", "Plot data with effect sizes", icon = icon("ranking-star"))
         })
       })
-      
+  
       # Generates the combined plot with superplot and effect sizes
-      superplot_with_effect_size_plot <- reactive({
+      superplot_with_effect_size_plot <- eventReactive(input$submit_superplot_with_effect_sizes, {
         if ((input$navpage == 'Superplot' && !is.null(input$test_groups_superplot) && input$n_boot_superplot >= 2)){
           req(mean_median_effect_size_plot(), plot_for_all_superplot())
           
@@ -1896,11 +1981,11 @@ server <- function(input, output, session) {
             # hides plot without effect size
             shinyjs::hide("superplot_plot")
             
+            # hides download plot
+            shinyjs::hide("download_superplot")
+            
             # shows plot if hidden
             shinyjs::show("superplot_plot_with_effect_sizes")
-            
-            # resets previous plot
-            output$superplot_plot <- renderPlot({NULL})
             
             # adds information about previous reset for update_button
             reset_info_superplot(1)
@@ -1908,9 +1993,6 @@ server <- function(input, output, session) {
             # resets text messages
             output$superplot_error_message <- renderText({NULL})
             output$error_message_superplot_data <- renderText({NULL})
-            
-            # hides plot without effect size
-            shinyjs::hide("superplot_plot")
             
             # Download the bar/box/scatter/violin
             output$download_superplot_effect_sizes <- downloadHandler(
@@ -1938,10 +2020,12 @@ server <- function(input, output, session) {
             shinyjs::hide("download_superplot")
             shinyjs::hide("height_plot_superplot")
             shinyjs::hide("width_plot_superplot")
+            
             #table with data and results
             output$data_superplot_plot_rendered <- renderUI({NULL})
             shinyjs::disable("options_superplot")
             shinyjs::hide("superplot_brush_selection")
+            
             # if effect sizes are selected
             shinyjs::hide("download_superplot_effect_sizes")
             shinyjs::hide("download_superplot_table_all")
@@ -2003,7 +2087,7 @@ server <- function(input, output, session) {
         shinyjs::hide("download_box_bar_scatter_violin")
         shinyjs::hide("download_box_bar_scatter_violin_effect_sizes")
         shinyjs::hide("download_box_bar_scatter_violin_table_all")
-        shinyjs::hide("show_additional_group_legend_superplot")
+        shinyjs::hide("show_additional_group_legend_box_bar_scatter_violin")
         shinyjs::hide("box_bar_scatter_violin_brush_selection")
         shinyjs::hide("options_box_bar_scatter_violin")
         shinyjs::reset("test_groups_box_bar_scatter_violin")
@@ -2013,14 +2097,6 @@ server <- function(input, output, session) {
         # # restores selection
         # updateSelectInput(session, "num_levels_box_bar_scatter_violin", "Select the number of levels in your data", choices = c(1, 2, 3, 4))
          updateSelectInput(session, "number_effect_sizes_box_bar_scatter_violin",  "Number of effect sizes to display:", choices =c(0,1,2), selected = 0)
-         
-
-        # updateNumericInput(session, "n_boot_box_bar_scatter_violin", "Number of boostrap samples:", value = NULL)
-        # updateCheckboxInput(session, "repeated_observations_box_bar_scatter_violin", "Paired observations?", value = FALSE)
-        # updateSelectInput(session, "paired_observations_box_bar_scatter_violin", "Select column for paired observations", "")
-        # updateSelectInput(session, "control_group_box_bar_scatter_violin", "Select control group", choices = NULL, selected = NULL)
-        # updateSelectInput(session, "test_groups_box_bar_scatter_violin", "Select test group(s) and their order", choices = NULL, selected = NULL)
-        
       })
       
       # hides selection for box, bar, scatter, violin until file is uploaded
@@ -2033,31 +2109,31 @@ server <- function(input, output, session) {
       # Populate grouping variable dropdown menu
       observe({
         req(!is.null(data_plot()))
-        updateSelectInput(session, "group_var_box_bar_scatter_violin", "Select the grouping variable", choices = colnames(data_plot()))
+        updateSelectInput(session, "group_var_box_bar_scatter_violin", "Select the grouping variable", choices = colnames(data_plot()), selected = input$group_var_box_bar_scatter_violin)
       })
       
       # Populate level 1 column dropdown menu
       observe({
         req(data_plot(), input$group_var_box_bar_scatter_violin)
-        updateSelectInput(session, "x_var_box_bar_scatter_violin", "Select the column for level 1", choices = colnames(data_plot())[colnames(data_plot()) != input$group_var_box_bar_scatter_violin])
+        updateSelectInput(session, "x_var_box_bar_scatter_violin", "Select the column for level 1", choices = colnames(data_plot())[colnames(data_plot()) != input$group_var_box_bar_scatter_violin], selected = input$x_var_box_bar_scatter_violin)
       })
       
       # Populate level 2 column dropdown menu
       observe({
         req(data_plot(), input$group_var_box_bar_scatter_violin, input$x_var_box_bar_scatter_violin)
-        updateSelectInput(session, "y_var_box_bar_scatter_violin", "Select the column for level 2", choices = colnames(data_plot())[colnames(data_plot()) != input$group_var_box_bar_scatter_violin & colnames(data_plot()) != input$x_var_box_bar_scatter_violin])
+        updateSelectInput(session, "y_var_box_bar_scatter_violin", "Select the column for level 2", choices = colnames(data_plot())[colnames(data_plot()) != input$group_var_box_bar_scatter_violin & colnames(data_plot()) != input$x_var_box_bar_scatter_violin], selected = input$y_var_box_bar_scatter_violin)
       })
       
       # Populate level 3 column dropdown menu
       observe({
         req(data_plot(), input$group_var_box_bar_scatter_violin, input$x_var_box_bar_scatter_violin, input$y_var_box_bar_scatter_violin)
-        updateSelectInput(session, "z_var_box_bar_scatter_violin", "Select the column for level 3", choices = colnames(data_plot())[colnames(data_plot()) != input$group_var_box_bar_scatter_violin & colnames(data_plot()) != input$x_var_box_bar_scatter_violin & colnames(data_plot()) != input$y_var_box_bar_scatter_violin])
+        updateSelectInput(session, "z_var_box_bar_scatter_violin", "Select the column for level 3", choices = colnames(data_plot())[colnames(data_plot()) != input$group_var_box_bar_scatter_violin & colnames(data_plot()) != input$x_var_box_bar_scatter_violin & colnames(data_plot()) != input$y_var_box_bar_scatter_violin], selected = input$z_var_box_bar_scatter_violin)
       })
       
       # Populate level 4 column dropdown menu
       observe({
         req(data_plot(), input$group_var_box_bar_scatter_violin, input$x_var_box_bar_scatter_violin, input$y_var_box_bar_scatter_violin, input$z_var_box_bar_scatter_violin)
-        updateSelectInput(session, "w_var_box_bar_scatter_violin", "Select the column for level 4", choices = colnames(data_plot())[colnames(data_plot()) != input$group_var_box_bar_scatter_violin & colnames(data_plot()) != input$x_var_box_bar_scatter_violin & colnames(data_plot()) != input$y_var_box_bar_scatter_violin & colnames(data_plot()) != input$z_var_box_bar_scatter_violin])
+        updateSelectInput(session, "w_var_box_bar_scatter_violin", "Select the column for level 4", choices = colnames(data_plot())[colnames(data_plot()) != input$group_var_box_bar_scatter_violin & colnames(data_plot()) != input$x_var_box_bar_scatter_violin & colnames(data_plot()) != input$y_var_box_bar_scatter_violin & colnames(data_plot()) != input$z_var_box_bar_scatter_violin], selected = input$w_var_box_bar_scatter_violin)
       })
       
       # Populate group order
@@ -2078,7 +2154,6 @@ server <- function(input, output, session) {
         } else if (input$num_levels_box_bar_scatter_violin == 4) { 
           updateSelectInput(session, "additional_variable_box_bar_scatter_violin", "Select the column for additional grouping variable", choices = colnames(data_plot())[colnames(data_plot()) != input$group_var_box_bar_scatter_violin & colnames(data_plot()) != input$x_var_box_bar_scatter_violin & colnames(data_plot()) != input$y_var_box_bar_scatter_violin & colnames(data_plot()) != input$z_var_box_bar_scatter_violin & colnames(data_plot()) != input$w_var_box_bar_scatter_violin])
         }
-        
       })
       
       # Populate additional group order
@@ -2130,35 +2205,125 @@ server <- function(input, output, session) {
           filtered_data <- data_plot()
         }
         
-        
         updateSelectInput(session, "control_group_box_bar_scatter_violin", "Select control group", choices = na.omit(filtered_data[[input$group_var_box_bar_scatter_violin]]), selected = input$control_group_box_bar_scatter_violin)
         updateSelectInput(session, "test_groups_box_bar_scatter_violin", "Select test group(s) and their order", choices = setdiff(filtered_data[[input$group_var_box_bar_scatter_violin]], input$control_group_box_bar_scatter_violin))
         
       })
       
+      # disables buttons until variables are selected
+      observe({
+        req(data_plot())
+        # Check if all variables are present in data_plot()
+        if (input$num_levels_box_bar_scatter_violin == 1){
+          
+          # disables and enables reset and submit plot buttons
+          if (all(c(input$group_var_box_bar_scatter_violin, input$x_var_box_bar_scatter_violin) %in% names(data_plot()))) {
+            # Enable the button if all variables are present
+            shinyjs::enable("submit_plot_box_bar_scatter_violin")
+            shinyjs::enable("reset_box_bar_scatter_violin")
+            shinyjs::enable("submit_box_bar_scatter_violin_with_effect_sizes")
+            shinyjs::enable("reset_box_bar_scatter_violin_with_effect_sizes")
+          } else {
+            # Disable the button if any variable is missing
+            shinyjs::disable("submit_plot_box_bar_scatter_violin")
+            shinyjs::disable("reset_box_bar_scatter_violin")
+            shinyjs::enable("submit_box_bar_scatter_violin_with_effect_sizes")
+            shinyjs::enable("reset_box_bar_scatter_violin_with_effect_sizes")
+          }
+        } else if (input$num_levels_box_bar_scatter_violin == 2){
+          # disables and enables reset and submit plot buttons
+          if (all(c(input$group_var_box_bar_scatter_violin, input$x_var_box_bar_scatter_violin, input$y_var_box_bar_scatter_violin) %in% names(data_plot()))) {
+            # Enable the button if all variables are present
+            shinyjs::enable("submit_plot_box_bar_scatter_violin")
+            shinyjs::enable("reset_box_bar_scatter_violin")
+            shinyjs::enable("submit_box_bar_scatter_violin_with_effect_sizes")
+            shinyjs::enable("reset_box_bar_scatter_violin_with_effect_sizes")
+          } else {
+            # Disable the button if any variable is missing
+            shinyjs::disable("submit_plot_box_bar_scatter_violin")
+            shinyjs::disable("reset_box_bar_scatter_violin")
+            shinyjs::enable("submit_box_bar_scatter_violin_with_effect_sizes")
+            shinyjs::enable("reset_box_bar_scatter_violin_with_effect_sizes")
+          }
+        } else if (input$num_levels_box_bar_scatter_violin == 3){
+          # disables and enables reset and submit plot buttons
+          if (all(c(input$group_var_box_bar_scatter_violin, input$x_var_box_bar_scatter_violin, input$y_var_box_bar_scatter_violin, input$z_var_box_bar_scatter_violin) %in% names(data_plot()))) {
+            # Enable the button if all variables are present
+            shinyjs::enable("submit_plot_box_bar_scatter_violin")
+            shinyjs::enable("reset_box_bar_scatter_violin")
+            shinyjs::enable("submit_box_bar_scatter_violin_with_effect_sizes")
+            shinyjs::enable("reset_box_bar_scatter_violin_with_effect_sizes")
+          } else {
+            # Disable the button if any variable is missing
+            shinyjs::disable("submit_plot_box_bar_scatter_violin")
+            shinyjs::disable("reset_box_bar_scatter_violin")
+            shinyjs::enable("submit_box_bar_scatter_violin_with_effect_sizes")
+            shinyjs::enable("reset_box_bar_scatter_violin_with_effect_sizes")
+          }
+        } else if (input$num_levels_box_bar_scatter_violin == 4){
+          # disables and enables reset and submit plot buttons
+          if (all(c(input$group_var_box_bar_scatter_violin, input$x_var_box_bar_scatter_violin, input$y_var_box_bar_scatter_violin, input$z_var_box_bar_scatter_violin, input$w_var_box_bar_scatter_violin) %in% names(data_plot()))) {
+            # Enable the button if all variables are present
+            shinyjs::enable("submit_plot_box_bar_scatter_violin")
+            shinyjs::enable("reset_box_bar_scatter_violin")
+            shinyjs::enable("submit_box_bar_scatter_violin_with_effect_sizes")
+            shinyjs::enable("reset_box_bar_scatter_violin_with_effect_sizes")
+          } else {
+            # Disable the button if any variable is missing
+            shinyjs::disable("submit_plot_box_bar_scatter_violin")
+            shinyjs::disable("reset_box_bar_scatter_violin")
+            shinyjs::enable("submit_box_bar_scatter_violin_with_effect_sizes")
+            shinyjs::enable("reset_box_bar_scatter_violin_with_effect_sizes")
+          }
+        }
+      })
+      
+      #changes button name if plot has been generated
+      observeEvent(c(input$bootstrap_option_box_bar_scatter_violin, input$n_boot_box_bar_scatter_violin, input$paired_observations_box_bar_scatter_violin,
+                      input$control_group_box_bar_scatter_violin, input$test_groups_box_bar_scatter_violin, input$effect_size_mean_median_box_bar_scatter_violin,
+                      input$effect_sizes_hedges_cohen_glass_box_bar_scatter_violin, input$position_plot_mean_median_diff_box_bar_scatter_violin,
+                      input$choose_box_bar_scatter_violin, input$group_var_box_bar_scatter_violin, input$group_order_box_bar_scatter_violin, input$num_levels_box_bar_scatter_violin,
+                      input$x_var_box_bar_scatter_violin, input$y_var_box_bar_scatter_violin, input$z_var_box_bar_scatter_violin, input$w_var_box_bar_scatter_violin,
+                      input$additional_variable_box_bar_scatter_violin, input$additional_group_order_box_bar_scatter_violin, input$maginal_plot_box_bar_scatter_violin, input$geom_smooth_scatter_box_bar_scatter_violin),{
+                          
+                        if (is.ggplot(bar_box_scatter_violin_with_effect_size_plot()) && !is.null(bar_box_scatter_violin_with_effect_size_plot())){ 
+                          updateActionButton(session, "submit_box_bar_scatter_violin_with_effect_sizes", "Update plot with effect sizes", icon = icon("ranking-star"))
+                        } else {
+                          updateActionButton(session, "submit_box_bar_scatter_violin_with_effect_sizes", "Plot data with effect sizes", icon = icon("ranking-star"))
+                        }
+          })
+      
       #Resets y and x axis labels when variables are changed
+      # for 1 level
+      observeEvent(input$x_var_box_bar_scatter_violin,{
+        if (input$num_levels_box_bar_scatter_violin == 1) {
+          updateTextInput(session, "y_axis_text_title_box_bar_scatter_violin", value = input$x_var_box_bar_scatter_violin)
+        }
+      })
+      
       # for 2 levels
       observeEvent(input$y_var_box_bar_scatter_violin,{
         if (input$num_levels_box_bar_scatter_violin == 2) {
           updateTextInput(session, "y_axis_text_title_box_bar_scatter_violin", value = input$y_var_box_bar_scatter_violin)
         }
       })
+      
       # for 3 levels
       observeEvent(input$z_var_box_bar_scatter_violin,{
         if (input$num_levels_box_bar_scatter_violin == 3) {
           updateTextInput(session, "y_axis_text_title_box_bar_scatter_violin", value = input$z_var_box_bar_scatter_violin)
         }
       })
+      
       # for 4 levels
       observeEvent(input$w_var_box_bar_scatter_violin,{
         if (input$num_levels_box_bar_scatter_violin == 4) {
           updateTextInput(session, "y_axis_text_title_box_bar_scatter_violin", value = input$w_var_box_bar_scatter_violin)
         }
       })
-      
       observeEvent(input$group_var_box_bar_scatter_violin,{
         updateTextInput(session, "x_axis_text_title_box_bar_scatter_violin", value = input$group_var_box_bar_scatter_violin)
-      })
+        })
       
       #Updates colour by group to single colour when variables are updated
       observeEvent(input$group_var_box_bar_scatter_violin,{
@@ -2194,9 +2359,11 @@ server <- function(input, output, session) {
             }, height = input$height_plot_box_bar_scatter_violin, width = input$width_plot_box_bar_scatter_violin
             )
             
-            # shows numeric inputs for plot size
+            # shows numeric inputs and download buttons for plot
             shinyjs::show("height_plot_box_bar_scatter_violin")
             shinyjs::show("width_plot_box_bar_scatter_violin")
+            shinyjs::show("options_box_bar_scatter_violin")
+            shinyjs::show("download_box_bar_scatter_violin")
             shinyjs::enable("options_box_bar_scatter_violin")
             
             # if modal is not open
@@ -2228,6 +2395,7 @@ server <- function(input, output, session) {
           shinyjs::hide("download_box_bar_scatter_violin_table_all")
           shinyjs::hide("box_bar_scatter_violin_effect_size_table")
           
+          # resets plot reset button count
           reset_info_box_bar_scatter_violin_plot(0)
           
           # shows plot if hidden
@@ -2236,7 +2404,6 @@ server <- function(input, output, session) {
           # resets text messages
           output$box_bar_scatter_violin_error_message <- renderText({NULL})
           output$error_message_box_bar_scatter_violin_data <- renderText({NULL})
-          
           
           # Download the bar/box/scatter/violin
           output$download_box_bar_scatter_violin <- downloadHandler(
@@ -2256,10 +2423,12 @@ server <- function(input, output, session) {
           shinyjs::hide("download_box_bar_scatter_violin")
           shinyjs::hide("height_plot_box_bar_scatter_violin")
           shinyjs::hide("width_plot_box_bar_scatter_violin")
+          
           #table with data and results
           output$box_bar_scatter_violin_effect_size_table <- renderUI({NULL})
           shinyjs::disable("options_box_bar_scatter_violin")
           shinyjs::hide("box_bar_scatter_violin_brush_selection")
+          
           # if effect sizes are selected
           shinyjs::hide("download_box_bar_scatter_violin_effect_sizes")
           shinyjs::hide("download_box_bar_scatter_violin_table_all")
@@ -2298,7 +2467,7 @@ server <- function(input, output, session) {
           #sets click count to zero
           click_count_box_bar_scatter_violin(0)
           
-          #  if effect sizes are present
+          # if effect sizes are present
           output$box_bar_scatter_violin_plot_with_effect_size <- renderPlot({NULL})
           shinyjs::hide("download_box_bar_scatter_violin_effect_sizes")
           shinyjs::hide("download_box_bar_scatter_violin_table_all")
@@ -2309,6 +2478,8 @@ server <- function(input, output, session) {
           for (input_id in input_ids_to_reset()) {
             shinyjs::reset(input_id)
           }
+          
+          updateActionButton(session, "submit_box_bar_scatter_violin_with_effect_sizes", "Plot data with effect sizes", icon = icon("ranking-star"))
           
           # Reset the colors and populate them with new default colors (needs fixing)
             # for symbol colour and fill
@@ -2328,21 +2499,22 @@ server <- function(input, output, session) {
       })
       
       # Generates the combined plot with box, bar, scatter and effect sizes
-      bar_box_scatter_violin_with_effect_size_plot <- reactive({
+      bar_box_scatter_violin_with_effect_size_plot <- eventReactive(input$submit_box_bar_scatter_violin_with_effect_sizes,{
             #bar_box_scatter_violin_with_effect_size_plot(
             if ((input$navpage == 'Box, Bar, Scatter, Violin and Raincloud' && !is.null(input$test_groups_box_bar_scatter_violin) && input$n_boot_box_bar_scatter_violin >= 2)
-                || (input$navpage == 'Superplot' && !is.null(input$test_groups_superplot) && input$n_boot_superplot >= 2)){
+                 || (input$navpage == 'Superplot' && !is.null(input$test_groups_superplot) && input$n_boot_superplot >= 2)){
               req(mean_median_effect_size_plot(), plot_for_all_box_bar_scatter_violin())
+              
               # gets plots depending on selection (to avoid error with ggMarginal)
               if (!is.ggplot(plot_for_all_box_bar_scatter_violin())){
                 plot_for_all_box_bar_scatter_violin <- plot_for_all_box_bar_scatter_violin()[[2]]
               } else {
-                plot_for_all_box_bar_scatter_violin <- plot_for_all_box_bar_scatter_violin()    
+                plot_for_all_box_bar_scatter_violin <- plot_for_all_box_bar_scatter_violin()
               }
-              
+
               # gets legend
-              legend_for_all_superplot <- cowplot::get_legend(plot_for_all_box_bar_scatter_violin)   
-              
+              legend_for_all_superplot <- cowplot::get_legend(plot_for_all_box_bar_scatter_violin)
+
               if (input$number_effect_sizes_box_bar_scatter_violin == 1 && input$position_plot_mean_median_diff_box_bar_scatter_violin == "Aligned with mean/median") {
                 if (input$legend_outside_main_plot_box_bar_scatter_violin == TRUE){
                   main_plot <-cowplot::plot_grid(plot_for_all_box_bar_scatter_violin + theme(legend.position = "none"), mean_median_effect_size_plot(), align = "hv",  axis = "tb", rel_widths = c(4, 2))
@@ -2350,7 +2522,7 @@ server <- function(input, output, session) {
                 } else if (input$legend_outside_main_plot_box_bar_scatter_violin == FALSE) {
                   cowplot::plot_grid(plot_for_all_box_bar_scatter_violin, mean_median_effect_size_plot(),  align = "hv",  axis = "tb", rel_widths = c(4, 2))
                 }
-                
+
               } else if (input$number_effect_sizes_box_bar_scatter_violin == 1 && input$position_plot_mean_median_diff_box_bar_scatter_violin == "Below data") {
                 if (input$legend_outside_main_plot_box_bar_scatter_violin == TRUE){
                   main_plot <- cowplot::plot_grid(plot_for_all_box_bar_scatter_violin + theme(legend.position = "none"), mean_median_effect_size_plot(),  align = "v", axis = "l", rel_heights = c(4, 2), ncol = 1)
@@ -2359,7 +2531,7 @@ server <- function(input, output, session) {
                 } else if (input$legend_outside_main_plot_box_bar_scatter_violin == FALSE) {
                   cowplot::plot_grid(plot_for_all_box_bar_scatter_violin, mean_median_effect_size_plot(), align = "v", axis = "l", rel_heights = c(4, 2), ncol = 1)
                 }
-                
+
               } else if (input$number_effect_sizes_box_bar_scatter_violin == 2 && input$position_plot_mean_median_diff_box_bar_scatter_violin == "Aligned with mean/median") {
                 if (input$legend_outside_main_plot_box_bar_scatter_violin == TRUE){
                   #first align data plot with effect size on the bottom panel
@@ -2376,14 +2548,14 @@ server <- function(input, output, session) {
                   bottom_row <- cowplot::plot_grid(plots[[2]], ggplot() + theme_void(), align = "hv", axis = "tb", rel_widths = c(4,2))
                   cowplot::plot_grid(top_row, bottom_row, align = "v", axis = "l", ncol =1, nrow = 2, rel_heights = c(2,1), rel_widths = c(2,1))
                 }
-                
+
               }else if (input$number_effect_sizes_box_bar_scatter_violin == 2 && input$position_plot_mean_median_diff_box_bar_scatter_violin == "Below data") {
                 if (input$legend_outside_main_plot_box_bar_scatter_violin == TRUE){
-                  main_plot <- cowplot::plot_grid(plot_for_all_box_bar_scatter_violin + theme(legend.position = "none"), mean_median_effect_size_plot(), hedges_cohen_glass_effect_size_plot(), align = "v", axis = "l", ncol = 1, nrow = 3, rel_heights = c(3, 2, 2), 
+                  main_plot <- cowplot::plot_grid(plot_for_all_box_bar_scatter_violin + theme(legend.position = "none"), mean_median_effect_size_plot(), hedges_cohen_glass_effect_size_plot(), align = "v", axis = "l", ncol = 1, nrow = 3, rel_heights = c(3, 2, 2),
                                                   height = 1000, width = 800)
                   legend_plot <- cowplot::plot_grid(legend_for_all_superplot, NULL, NULL, align = "v", axis = "l", ncol = 1, nrow = 3, rel_heights = c(3, 2, 2))
                 } else if (input$legend_outside_main_plot_box_bar_scatter_violin == FALSE) {
-                  cowplot::plot_grid(plot_for_all_box_bar_scatter_violin, mean_median_effect_size_plot(), hedges_cohen_glass_effect_size_plot(), align = "v", axis = "l", ncol = 1, nrow = 3, rel_heights = c(3, 2, 2), 
+                  cowplot::plot_grid(plot_for_all_box_bar_scatter_violin, mean_median_effect_size_plot(), hedges_cohen_glass_effect_size_plot(), align = "v", axis = "l", ncol = 1, nrow = 3, rel_heights = c(3, 2, 2),
                                      height = 1000, width = 800)
                 }
               }
@@ -2406,8 +2578,7 @@ server <- function(input, output, session) {
                 bar_box_scatter_violin_with_effect_size_plot()
               }, height = input$height_plot_box_bar_scatter_violin, width = input$width_plot_box_bar_scatter_violin
               )
-              # #sets click count to zero
-               #click_count_box_bar_scatter_violin(0)
+              
               # shows numeric inputs for plot size
               shinyjs::show("height_plot_box_bar_scatter_violin")
               shinyjs::show("width_plot_box_bar_scatter_violin")
@@ -2416,6 +2587,8 @@ server <- function(input, output, session) {
               shinyjs::show("download_box_bar_scatter_violin_table_all")
               shinyjs::show("box_bar_scatter_violin_effect_size_table")
               
+              # hides download plot
+              shinyjs::hide("download_box_bar_scatter_violin")
               
               # if modal is not open
             } else if (input$modal_box_bar_scatter_violin != TRUE && !is.null(plot_for_all_box_bar_scatter_violin()) && click_count_box_bar_scatter_violin() == 0) {
@@ -2423,8 +2596,7 @@ server <- function(input, output, session) {
                 bar_box_scatter_violin_with_effect_size_plot()
               }, height = input$height_plot_box_bar_scatter_violin, width = input$width_plot_box_bar_scatter_violin
               )
-              # #sets click count to zero
-               #click_count_box_bar_scatter_violin(0)
+              
               # shows numeric inputs and download buttons for plot
               shinyjs::show("height_plot_box_bar_scatter_violin")
               shinyjs::show("width_plot_box_bar_scatter_violin")
@@ -2432,8 +2604,10 @@ server <- function(input, output, session) {
               shinyjs::show("download_box_bar_scatter_violin_effect_sizes")
               shinyjs::show("download_box_bar_scatter_violin_table_all")
               shinyjs::show("box_bar_scatter_violin_effect_size_table")
+              
+              # hides download plot
+              shinyjs::hide("download_box_bar_scatter_violin")
             }
-            
             
             # hides plot without effect size
             shinyjs::hide("box_bar_scatter_violin_plot")
@@ -2443,8 +2617,7 @@ server <- function(input, output, session) {
             
             # adds information about previous reset for update_button
             reset_info_box_bar_scatter_violin_plot(1)
-            #reset_info_box_bar_scatter_violin_plot(1)
-            
+
             # resets text messages
             output$box_bar_scatter_violin_error_message <- renderText({NULL})
             output$error_message_box_bar_scatter_violin_data <- renderText({NULL})
@@ -2471,10 +2644,6 @@ server <- function(input, output, session) {
             
             # For brushed points when plotting
             shinyjs::hide("box_bar_scatter_violin_brush_selection")
-            # output$box_bar_scatter_violin_brush_selection <- renderTable({
-            #   brushedPoints(data_plot(), input$plot_brush_box_bar_scatter_violin_with_effect_size, xvar = input$group_var_box_bar_scatter_violin, yvar = input$x_var_box_bar_scatter_violin)
-            # })
-            
             
           },  error = function(e) {
             # disables plots, and buttons if plot is not rendered
@@ -2482,10 +2651,12 @@ server <- function(input, output, session) {
             shinyjs::hide("download_box_bar_scatter_violin")
             shinyjs::hide("height_plot_box_bar_scatter_violin")
             shinyjs::hide("width_plot_box_bar_scatter_violin")
+            
             #table with data and results
             output$box_bar_scatter_violin_effect_size_table <- renderUI({NULL})
             shinyjs::disable("options_box_bar_scatter_violin")
             shinyjs::hide("box_bar_scatter_violin_brush_selection")
+            
             # if effect sizes are selected
             shinyjs::hide("download_box_bar_scatter_violin_effect_sizes")
             shinyjs::hide("download_box_bar_scatter_violin_table_all")
@@ -2542,7 +2713,6 @@ server <- function(input, output, session) {
       mean_median_diff_display <- reactiveVal(0)
       hedges_cohen_glass_display <- reactiveVal(0)
       mean_median_diff_alignment <- reactiveVal(0)
-      #)
       
       # for names of variables
       group_var_control <- reactiveVal(0)
@@ -2566,6 +2736,20 @@ server <- function(input, output, session) {
       mean_median_calculated_CI <- reactiveVal(0)
       mean_median_density_list <-reactiveVal(0)
       hedges_cohen_glass_table_hedges_cohen <-reactiveVal(0)
+      
+      # Shows error message if hierarchical bootstrap is chosen for paired observations
+      observeEvent(c(input$bootstrap_option_box_bar_scatter_violin, input$bootstrap_option_superplot, input$repeated_observations_box_bar_scatter_violin, input$repeated_observations_superplot),{
+        if ((input$bootstrap_option_box_bar_scatter_violin == "hierarchical_boot" && input$repeated_observations_box_bar_scatter_violin == TRUE) || (input$bootstrap_option_superplot == "hierarchical_boot" && input$repeated_observations_superplot == TRUE)){
+          showToast(
+            session = shiny::getDefaultReactiveDomain(), input = input,
+            text = "Hierarchical bootstrap function cannot be used for repeated observations",
+            type = "error",
+            position = "bottom-left"
+          )
+          # updates checkbox input
+          updateCheckboxInput(session, paste0("repeated_observations_", tab_id()), value = FALSE)
+        }
+      })
       
       # Get effect bootstrapped effect sizes
       observeEvent(c(input$submit_box_bar_scatter_violin_with_effect_sizes, input$update_options_box_bar_scatter_violin, input$submit_superplot_with_effect_sizes, input$update_options_superplot),{
@@ -2670,7 +2854,6 @@ server <- function(input, output, session) {
                 paired = NULL
               }
               
-              
               # defines control and test groups
               control_group <- input$control_group_box_bar_scatter_violin
               test_group <- input$test_groups_box_bar_scatter_violin
@@ -2771,7 +2954,6 @@ server <- function(input, output, session) {
               mean_median_diff <- vector("list", length(test_group))
               names(mean_median_diff) <- test_group  # Set the names of the list elements to the test_group
               
-              
               # Run mean or median difference
               if (mean_median_effect_size == "Mean difference") {
                 # Extract the mean component from the result list
@@ -2820,7 +3002,6 @@ server <- function(input, output, session) {
                 density_list_mean_median[[group_name]] <-  density_mean_median_diff
                 mean_list_mean_median[[group_name]] <-  mean_mean_median_diff
                 CI_list_mean_median[[group_name]] <- CI_mean_median_diff
-                
               }
               
               # Create a table for mean/median diff using the stored variables
@@ -2846,6 +3027,11 @@ server <- function(input, output, session) {
                 # Calculate mean for current group
                 mean_hedges_cohen <- mean(hedges_cohen_glass[[i]])
                 
+                  # fixes mean in case any infinite values exist
+                  if (is.na(mean_hedges_cohen)){
+                    mean_hedges_cohen <- mean(hedges_cohen_glass[[i]][is.finite(hedges_cohen_glass[[i]])], na.rm = TRUE)
+                  }
+                
                 # Calculate confidence interval for current group
                 CI_hedges_cohen <- quantile(hedges_cohen_glass[[i]], c((1 - confidence_level) / 2, 1 - (1 - confidence_level) / 2))
                 
@@ -2854,6 +3040,7 @@ server <- function(input, output, session) {
                 mean_list_hedges_cohen[[group_name]] <- mean_hedges_cohen
                 CI_list_hedges_cohen[[group_name]] <- CI_hedges_cohen
               }  
+              
               # Create a table for mean/median diff using the stored variables
               table_hedges_cohen <- data.frame(
                 Group = rep(test_group, each = lengths(hedges_cohen_glass)),
@@ -3051,7 +3238,6 @@ server <- function(input, output, session) {
                 })
               }
               
-              
               # returns list with mean/median and cohen/hedges/cliff effect sizes for plot
               mean_median_calculated_mean(mean_list_mean_median)
               mean_median_calculated_CI(CI_list_mean_median)
@@ -3062,9 +3248,8 @@ server <- function(input, output, session) {
               hedges_cohen_glass_calculated_CI(CI_list_hedges_cohen)
               hedges_cohen_glass_density_list(density_list_hedges_cohen)
               hedges_cohen_glass_table_hedges_cohen(table_hedges_cohen)
-              
-              # end of checkpoint if 
             }
+            
             output$box_bar_scatter_violin_error_message <- renderText({NULL})
             output$superplot_error_message <- renderText({NULL})
             
@@ -3086,8 +3271,8 @@ server <- function(input, output, session) {
       })
       
       # Generates effect size plots
-      observe({
-        if ((input$navpage == 'Box, Bar, Scatter, Violin and Raincloud' && !is.null(input$test_groups_box_bar_scatter_violin) && input$n_boot_box_bar_scatter_violin >= 2)
+      observeEvent(c(input$submit_box_bar_scatter_violin_with_effect_sizes,input$submit_superplot_with_effect_sizes),{
+        if ((input$navpage == 'Box, Bar, Scatter, Violin and Raincloud' && !is.null(input$test_groups_box_bar_scatter_violin) && !is.na(input$n_boot_box_bar_scatter_violin) && input$n_boot_box_bar_scatter_violin >= 2)
             || (input$navpage == 'Superplot' && !is.null(input$test_groups_superplot) && input$n_boot_superplot >= 2)){
           # uses trCatch to detect any error
           tryCatch({
@@ -3449,8 +3634,7 @@ server <- function(input, output, session) {
               labs(x = NULL, y = hedges_cohen_glass_effect_size) +
               # changes colour of initial x axis label when plot is below main data plot
               facetted_pos_scales(x = list(Label == " " ~ scale_x_continuous(guide = guide_axis_colour(colour = "white"))))
-            #######################################################################################################################
-            
+
             mean_median_effect_size_plot(plot_effect_mean_median)
             hedges_cohen_glass_effect_size_plot(plot_effect_hedges_cohen)  
             
@@ -3606,7 +3790,7 @@ server <- function(input, output, session) {
                y_text_colour = input[[paste0("y_text_colour_", tab_id)]],
                y_text_font = as.character(input[[paste0("y_text_font_", tab_id)]]),
                
-               #Scales Box
+               #Scales
                x_start_range = input[[paste0("x_start_range_", tab_id)]],
                x_end_range = input[[paste0("x_end_range_", tab_id)]],
                y_start_range = input[[paste0("y_start_range_", tab_id)]],
@@ -3617,7 +3801,7 @@ server <- function(input, output, session) {
                ## add scale breaks###
                ######################
                
-               #Labels and Titles Box
+               #Labels and Titles
                x_axis_text_size = input[[paste0("x_axis_text_size_", tab_id)]],
                x_axis_text_colour = input[[paste0("x_axis_text_colour_", tab_id)]],
                x_axis_text_face = input[[paste0("x_axis_text_face_", tab_id)]],
@@ -3633,7 +3817,7 @@ server <- function(input, output, session) {
                y_axis_text_margin = input[[paste0("y_axis_text_margin_", tab_id)]],
                y_axis_text_title = input[[paste0("y_axis_text_title_", tab_id)]],
                
-               #Symbols Box
+               #Symbols and Box
                geom_jitter_colour_fill_by_group = input[[paste0("geom_jitter_colour_fill_by_group_", tab_id)]],
                color_var = input[[paste0("color_var_", tab_id)]],
                symbol_fill = input[[paste0("symbol_fill_", tab_id)]],
@@ -3682,7 +3866,7 @@ server <- function(input, output, session) {
                box_transparency = input[[paste0("box_transparency_", tab_id)]],
                sd_se_bar_chart = input[[paste0("sd_se_bar_chart_", tab_id)]],
                
-               #Background Box
+               #Background Panel
                colour_background = input[[paste0("colour_background_", tab_id)]],
                colour_background_border = input[[paste0("colour_background_border_", tab_id)]],
                colour_background_border_thickness = input[[paste0("colour_background_border_thickness_", tab_id)]],
@@ -3807,7 +3991,7 @@ server <- function(input, output, session) {
           updateNumericInput(session, paste0("y_text_colour_", tab_id), "Text color:", value = saved_options()[[1]]$y_text_colour)
           updateSelectInput(session, paste0("y_text_font_", tab_id), "Text font:", choices = c("Arial", "Times New Roman", "Helvetica", "Calibri", "Verdana", "Georgia", "Courier New", "Palatino Linotype"), selected = saved_options()[[1]]$y_text_font)
           
-          # Scales box
+          # Scales
           updateNumericInput(session, paste0("x_start_range_", tab_id), "X-axis Start:", value = saved_options()[[1]]$x_start_range)
           updateNumericInput(session, paste0("x_end_range_", tab_id), "X-axis End:", value = saved_options()[[1]]$x_end_range)
           updateNumericInput(session, paste0("y_start_range_", tab_id), "Y-axis Start:", value = saved_options()[[1]]$y_start_range)
@@ -3824,7 +4008,7 @@ server <- function(input, output, session) {
           # updateNumericInput(paste0("y_num_breaks_", tab_id), "Number of Y-axis Breaks:", value = NULL)
           # updateTextInput(paste0("y_break_values_", tab_id), "Y-axis Break Values:", value = NULL)
           
-          # Labels and titles box
+          # Labels and titles
           updateNumericInput(session, inputId = paste0("x_axis_text_size_", tab_id), label = "Text size", value = saved_options()[[1]]$x_axis_text_size)
           updateColourInput(session, inputId = paste0("x_axis_text_colour_", tab_id), label = "Select text colour", value = saved_options()[[1]]$x_axis_text_colour)
           updateSelectInput(session, inputId = paste0("x_axis_text_face_", tab_id), label = "Text face", choices = c("plain", "italic", "bold", "bold.italic"), selected = saved_options()[[1]]$x_axis_text_face)
@@ -3840,7 +4024,7 @@ server <- function(input, output, session) {
           updateNumericInput(session, inputId = paste0("y_axis_text_margin_", tab_id), label = "Margin", value = saved_options()[[1]]$y_axis_text_margin)
           updateTextInput(session, inputId = paste0("y_axis_text_title_", tab_id), label = "Text title", value = saved_options()[[1]]$y_axis_text_title)
        
-          # Symbols Box (if selected variable for colour is not present it returns 'Single Colour')
+          # Symbols and Box (if selected variable for colour is not present it returns 'Single Colour')
             if (any(saved_options()[[1]]$geom_jitter_colour_fill_by_group %in% c(x_var, z_var, paste0(x_var, " "), paste0(z_var, " ")))) {
               updateSelectInput(session, paste0("geom_jitter_colour_fill_by_group_", tab_id), choices = list("Single Colour", "Colour by Group - discrete" = c(x_var, z_var), "Colour by Group - gradient"= c(paste0(x_var, " "), paste0(z_var, " "))), selected = saved_options()[[1]]$geom_jitter_colour_fill_by_group)
             } else {
@@ -3909,7 +4093,7 @@ server <- function(input, output, session) {
           updateSelectInput(session, inputId = paste0("correlation_coefficient_text_font_", tab_id), label = "Text fount", choices = c("Arial", "Times New Roman", "Helvetica", "Calibri", "Verdana", "Georgia", "Courier New", "Palatino Linotype"), selected = saved_options()[[1]]$correlation_coefficient_text_font)
           
           # box and bar-charts
-          # Symbols Box (if selected variable for colour is not present it returns 'Single Colour')
+          # Symbols and Box (if selected variable for colour is not present it returns 'Single Colour')
             if (any(saved_options()[[1]]$geom_boxplot_colour_fill_by_group %in% c(x_var, z_var, paste0(x_var, " "), paste0(z_var, " ")))) {
               updateSelectInput(session, paste0("geom_boxplot_colour_fill_by_group_", tab_id), choices = list("Single Colour", "Colour by Group - discrete" = c(x_var, z_var), "Colour by Group - gradient"= c(paste0(x_var, " "), paste0(z_var, " "))), selected = saved_options()[[1]]$geom_boxplot_colour_fill_by_group)
             } else {
@@ -3924,7 +4108,7 @@ server <- function(input, output, session) {
           updateSliderInput(session, inputId = paste0("box_transparency_", tab_id), label = "Box transparency", min = 0, max = 1, value = saved_options()[[1]]$box_transparency)
           updateRadioButtons(session, inputId = paste0("sd_se_bar_chart_", tab_id), label = "Select errorbar display", choices = c("Standard deviation", "Standard error of mean", "None"), selected = saved_options()[[1]]$sd_se_bar_chart)
           
-          #Background Box
+          #Background Panel
           updateColourInput(session, inputId = paste0("colour_background_", tab_id), label = "Background colour", value = saved_options()[[1]]$colour_background)
           updateColourInput(session, inputId = paste0("colour_background_border_", tab_id), label = "Background border colour", value = saved_options()[[1]]$colour_background_border)
           updateNumericInput(session, inputId = paste0("colour_background_border_thickness_", tab_id), label = "Background border thickness", value = saved_options()[[1]]$colour_background_border_thickness)
@@ -3998,7 +4182,6 @@ server <- function(input, output, session) {
       #List of future inputs to reset when pressing clear button (works for every plot)
       input_ids_to_reset <- reactive({
         # defines tab_id based on tab selected
-        #Gets data for each selected tab
         if (input$navpage == 'Data Selection and Visualization' && input$tabselected =='Table & Graph') {
           tab_id = "table"
         } else if (input$navpage == 'Intraclass correlation & Linear Mixed Models' && input$tabselected2 == 'Intraclass Correlation Analysis (2 Levels)') {
@@ -4037,7 +4220,7 @@ server <- function(input, output, session) {
           paste0("y_text_size_", tab_id),
           paste0("y_text_colour_", tab_id),
           paste0("y_text_font_", tab_id),
-          #"Scales Box",
+          #"Scales",
           #enter numeric values for scales
           paste0("x_start_range_", tab_id),
           paste0("x_end_range_", tab_id),
@@ -4058,7 +4241,7 @@ server <- function(input, output, session) {
           paste0("x_break_values_", tab_id),
           paste0("y_num_breaks_", tab_id),
           paste0("y_break_values_", tab_id),
-          #"Labels and Titles Box"
+          #Labels and Titles
           #x axis label
           paste0("x_axis_text_size_", tab_id),
           paste0("x_axis_text_colour_", tab_id),
@@ -4238,8 +4421,9 @@ server <- function(input, output, session) {
         }
       })
       
-      # Create reactiveValues to store previous values of inputs for plot_all
+      ## Create reactiveValues to store previous values of inputs for plot_all
       prev_input_values <- reactiveValues(
+        
         #For lines and ticks 
           # X axis
           x_line_thickness = 1,
@@ -4267,7 +4451,7 @@ server <- function(input, output, session) {
           y_text_colour = "black",
           y_text_font = "Arial",
           
-          #Scales Box
+          #Scales
           x_start_range = NA,
           x_end_range = NA,
           y_start_range = NA,
@@ -4276,7 +4460,7 @@ server <- function(input, output, session) {
           y_scale_type = "linear",
           numeric_display_type_y_axis = "Decimal",
           
-          #Labels and Titles Box
+          #Labels and Titles
           x_axis_text_size = 12,
           x_axis_text_colour = "black",
           x_axis_text_face = "plain",
@@ -4292,7 +4476,7 @@ server <- function(input, output, session) {
           y_axis_text_margin = 10,
           y_axis_text_title = "",
           
-          #Symbols Box
+          #Symbols
           geom_jitter_colour_fill_by_group = "Single Colour",
           color_var = "black",
           symbol_fill = "black",
@@ -4336,7 +4520,6 @@ server <- function(input, output, session) {
           correlation_coefficient_text_size = 4,
           correlation_coefficient_text_font = "Arial",
           
-          
           #Legend
           maginal_plot_legend = "",
           marginal_plot_legend_position_x = 1,
@@ -4356,7 +4539,7 @@ server <- function(input, output, session) {
           box_transparency = 0.8,
           sd_se_bar_chart = "Standard deviation",
           
-          #Background Box
+          #Background Panel
           colour_background = "white",
           colour_background_border = "white",
           colour_background_border_thickness = 0.5,
@@ -4420,8 +4603,7 @@ server <- function(input, output, session) {
           zero_line_colour = "black",
           zero_line_type = "dotted",
           zero_line_width = 0.5
-          
-      )
+        )
 
       # Selects RenderUI color for geom_jitter and geom_boxplot
       observe({
@@ -4618,9 +4800,7 @@ server <- function(input, output, session) {
             y_var <- input$w_var_box_bar_scatter_violin
             z_var <- input$z_var_box_bar_scatter_violin
           }
-          # x_var <- input$group_var_box_bar_scatter_violin
-          # y_var <- input$x_var_box_bar_scatter_violin
-          # z_var <- input$y_var_box_bar_scatter_violin
+          
         } else if (input$modal_superplot == TRUE) {
           tab_id = "superplot"
           data <- data_plot()
@@ -4650,15 +4830,19 @@ server <- function(input, output, session) {
             updateSelectInput(session, paste0("geom_boxplot_colour_fill_by_group_", tab_id), choices = list("Single Colour", "Colour by Group - discrete" = c(x_var, z_var)), selected = input[[paste0("geom_boxplot_colour_fill_by_group_", tab_id)]])
           }
         
-        #For TabPanel Marginal Plots hide and show
-        if (!is.null(input[[paste0("maginal_plot_", tab_id)]])){
-          if (input[[paste0("maginal_plot_", tab_id)]] == TRUE){
-            showTab(inputId = paste0("panels_options_", tab_id), target = "Marginal Plots")
-          } else if (input[[paste0("maginal_plot_", tab_id)]] == FALSE){
-            hideTab(inputId = paste0("panels_options_", tab_id), target = "Marginal Plots")
-          } 
+        #For TabPanel Marginal Plots hide and show when selected
+        if (tab_id == "superplot"){
+          hideTab(inputId = paste0("panels_options_", tab_id), target = "Marginal Plots")
+        } else if (tab_id != "superplot"){
+          if (!is.null(input[[paste0("maginal_plot_", tab_id)]])){
+            if (input[[paste0("maginal_plot_", tab_id)]] == TRUE && input[[paste0("choose_", tab_id)]] == "Scatter"){
+              showTab(inputId = paste0("panels_options_", tab_id), target = "Marginal Plots")
+            } else if ((input[[paste0("maginal_plot_", tab_id)]] == FALSE && input[[paste0("choose_", tab_id)]] == "Scatter") || input[[paste0("choose_", tab_id)]] != "Scatter"){
+              hideTab(inputId = paste0("panels_options_", tab_id), target = "Marginal Plots")
+            } 
+          }
         }
-        
+         
         # for effect size hide and show for box, bar, scatter, violin and superplot
         if (input$number_effect_sizes_box_bar_scatter_violin >= 1 || input$number_effect_sizes_superplot >= 1){
           showTab(inputId = paste0("panels_options_", tab_id), target = "Effect size plots")
@@ -4724,6 +4908,21 @@ server <- function(input, output, session) {
           shinyjs::toggle(paste0("symbol_fill_gradient_high_", tab_id), condition = FALSE)
         }
         
+        # hides extra errorbar options when scatter superplot is shown
+        if (input[[paste0("choose_", tab_id)]] == "Scatter" && tab_id == "superplot"){
+          shinyjs::hide(paste0("geom_boxplot_colour_fill_by_group_", tab_id))
+          shinyjs::hide(paste0("box_line_", tab_id))
+          shinyjs::hide(paste0("colour_boxplot_line_inputs_", tab_id))
+          shinyjs::hide(paste0("box_fill_", tab_id))
+          shinyjs::hide(paste0("colour_boxplot_fill_inputs_", tab_id))
+        } else if (input[[paste0("choose_", tab_id)]] != "Scatter" && tab_id == "superplot") {
+          shinyjs::show(paste0("geom_boxplot_colour_fill_by_group_", tab_id))
+          shinyjs::show(paste0("box_line_", tab_id))
+          shinyjs::show(paste0("colour_boxplot_line_inputs_", tab_id))
+          shinyjs::show(paste0("box_fill_", tab_id))
+          shinyjs::show(paste0("colour_boxplot_fill_inputs_", tab_id))
+        }
+        
         # allows mean dot modal selection only for superplot
           if (tab_id != "superplot"){
             shinyjs::hide(paste0("symbol_size_superplot_", tab_id))
@@ -4741,7 +4940,7 @@ server <- function(input, output, session) {
             updateCheckboxGroupInput(session, paste0("legends_selected_", tab_id), label = "Select legends to show", choices = c("Dots"), selected = input[[paste0("legends_selected_", tab_id)]])
           } else if (input[[paste0("choose_", tab_id)]] == "Box-plot") {
             updateCheckboxGroupInput(session, paste0("legends_selected_", tab_id), label = "Select legends to show", choices = c("Dots", "Box"), selected = input[[paste0("legends_selected_", tab_id)]])
-          } else if (input[[paste0("choose_", tab_id)]] == "Bar") {
+          } else if (input[[paste0("choose_", tab_id)]] == "Bar Chart") {
             updateCheckboxGroupInput(session, paste0("legends_selected_", tab_id), label = "Select legends to show", choices = c("Dots", "Bar"), selected = input[[paste0("legends_selected_", tab_id)]])
           } else if (input[[paste0("choose_", tab_id)]] == "Violin") {
             updateCheckboxGroupInput(session, paste0("legends_selected_", tab_id), label = "Select legends to show", choices = c("Dots", "Violin"), selected = input[[paste0("legends_selected_", tab_id)]])
@@ -4750,14 +4949,12 @@ server <- function(input, output, session) {
           }
         }
         
-        
         # hides legend outside plot option (shows only for effect size plots)
         hide(paste0("legend_outside_main_plot_", tab_id))
         
-        if ((tab_id == "Superplot" && !is.null(superplot_with_effect_size_plot())) || (tab_id == "box_bar_scatter_violin" && !is.null(bar_box_scatter_violin_with_effect_size_plot()))){
-          show(paste0("legend_outside_main_plot_", tab_id))
+        if ((tab_id == "superplot" && !is.null(superplot_with_effect_size_plot())) || (tab_id == "box_bar_scatter_violin" && !is.null(bar_box_scatter_violin_with_effect_size_plot()))){
+          shinyjs::show(paste0("legend_outside_main_plot_", tab_id))
         }
-        
       })
       
       # Create a reactiveValues object to store selected colors
@@ -4791,7 +4988,7 @@ server <- function(input, output, session) {
         selected_colors_boxplot_line_superplot <- reactiveValues()
         selected_colors_boxplot_fill_superplot <- reactiveValues()
         
-      ##NEW Render UI for colour symbol selection for each group_var
+      ##Render UI for colour symbol selection for each group_var
         symbol_ui <- renderUI({
           req((input$geom_jitter_colour_fill_by_group_table != "Single Colour" || input$geom_jitter_colour_fill_by_group_icc != "Single Colour" || input$geom_jitter_colour_fill_by_group_icc_two != "Single Colour" || input$geom_jitter_colour_fill_by_group_box_bar_scatter_violin != "Single Colour" || input$geom_jitter_colour_fill_by_group_superplot != "Single Colour"))
           
@@ -4803,8 +5000,7 @@ server <- function(input, output, session) {
             } else {
               plot_selected <- plot_for_all_table()    
             }
-            #plot_selected <- plot_for_all_table()
-            
+
           } else if (input$navpage == 'Intraclass correlation & Linear Mixed Models' && input$tabselected2 == 'Intraclass Correlation Analysis (2 Levels)') {
             tab_id <- "icc"
             if (!is.ggplot(plot_for_all_icc())){
@@ -4812,8 +5008,7 @@ server <- function(input, output, session) {
             } else {
               plot_selected <- plot_for_all_icc()    
             }
-            #plot_selected <- plot_for_all_icc()
-            
+
           } else if (input$navpage == 'Intraclass correlation & Linear Mixed Models' && input$tabselected2 == 'Linear Mixed Model') {
             tab_id <- "icc_two"
             if (!is.ggplot(plot_for_all_icc_two())){
@@ -4821,8 +5016,7 @@ server <- function(input, output, session) {
             } else {
               plot_selected <- plot_for_all_icc_two()    
             }
-            #plot_selected <- plot_for_all_icc_two()
-            
+
           } else if (input$navpage == 'Box, Bar, Scatter, Violin and Raincloud') {
             tab_id <- "box_bar_scatter_violin"
             if (!is.ggplot(plot_for_all_box_bar_scatter_violin())){
@@ -4830,8 +5024,7 @@ server <- function(input, output, session) {
             } else {
               plot_selected <- plot_for_all_box_bar_scatter_violin()    
             }
-            #plot_selected <- plot_for_all_box_bar_scatter_violin()
-            
+
           } else if (input$navpage == 'Superplot') {
             tab_id <- "superplot"
             plot_selected <- plot_for_all_superplot()
@@ -4865,8 +5058,6 @@ server <- function(input, output, session) {
                   group_var_levels <- levels(unique(plot_data$plot$data[[input[[paste0("geom_jitter_colour_fill_by_group_", tab_id)]]]]))
                 }
               }
-
-
             }
           }
         } else {
@@ -4901,18 +5092,7 @@ server <- function(input, output, session) {
             additional_colors <- rep("black", num_colors_to_add)
             # fills gaps with black colors
             eval(parse(text = paste0("selected_colors_", tab_id, "$colors <- c(get(paste0('selected_colors_', tab_id))$colors, additional_colors)")))
-            
-            # if (tab_id == "table") {
-            #   selected_colors_table$colors <- c(get(paste0("selected_colors_", tab_id))$colors, additional_colors)
-            # } else if (tab_id == "icc") {
-            #   selected_colors_icc$colors <- c(get(paste0("selected_colors_", tab_id))$colors, additional_colors)
-            # } else if (tab_id == "icc_two"){
-            #   selected_colors_icc_two$colors <- c(get(paste0("selected_colors_", tab_id))$colors, additional_colors)
-            # } else if (tab_id == "box_bar_scatter_violin"){
-            #   selected_colors_box_bar_scatter_violin$colors <- c(get(paste0("selected_colors_", tab_id))$colors, additional_colors)
-            # }
-            # 
-            
+         
             # Reset input values
             for (i in (length(get(paste0("selected_colors_", tab_id))$colors) - num_colors_to_add + 1):length(get(paste0("selected_colors_", tab_id))$colors)) {
               updateColourInput(session, paste0("color_var_", tab_id, i), value = "black")
@@ -4994,15 +5174,10 @@ server <- function(input, output, session) {
               # gets grouping variables from plot
               for (i in 1:length(group_var_levels)) {
                 if (is.null(input[[paste0("color_var_", tab_id, i)]]) || (length(get(paste0("selected_colors_", tab_id))$colors) < length(group_var_levels))) {
-                  #eval(parse(text = paste0("selected_colors_", tab_id, "$colors[[", i, "]] <- '", input[[paste0("color_var_", tab_id, i)]], "'")))
-                  #eval(parse(text = paste0("selected_colors_", tab_id, "$colors[[", i, "]] <- 'black'")))
-                  #eval(parse(text = paste0("get(selected_colors_", tab_id, ")$colors[[", i, "]] <- '", "black"[i], "'")))
                   eval(parse(text = paste0("selected_colors_", tab_id, "$colors[[", i, "]] <- 'black'")))
                   
-                    
                 } else if (!is.null(input[[paste0("color_var_", tab_id, i)]])) {
                   eval(parse(text = paste0("selected_colors_", tab_id, "$colors[[", i, "]] <- '", input[[paste0("color_var_", tab_id, i)]], "'")))
-                  #get(paste0("selected_colors_", tab_id))$colors[[i]] <- input[[paste0("color_var_", tab_id, i)]]
                 }
               }
               #resets click count
@@ -5046,8 +5221,6 @@ server <- function(input, output, session) {
               plot_selected <- plot_for_all_icc()    
             }
             
-            #plot_selected <- plot_for_all_icc()
-            
           } else if (input$navpage == 'Intraclass correlation & Linear Mixed Models' && input$tabselected2 == 'Linear Mixed Model') {
             tab_id <- "icc_two"
             if (!is.ggplot(plot_for_all_icc_two())){
@@ -5055,8 +5228,7 @@ server <- function(input, output, session) {
             } else {
               plot_selected <- plot_for_all_icc_two()    
             }
-            #plot_selected <- plot_for_all_icc_two()
-            
+
           } else if (input$navpage == 'Box, Bar, Scatter, Violin and Raincloud') {
             tab_id <- "box_bar_scatter_violin"
             if (!is.ggplot(plot_for_all_box_bar_scatter_violin())){
@@ -5064,8 +5236,7 @@ server <- function(input, output, session) {
             } else {
               plot_selected <- plot_for_all_box_bar_scatter_violin()    
             }
-            #plot_selected <- plot_for_all_box_bar_scatter_violin()
-            
+
           } else if (input$navpage == 'Superplot') {
             tab_id <- "superplot"
             plot_selected <- plot_for_all_superplot()
@@ -5099,8 +5270,6 @@ server <- function(input, output, session) {
                     group_var_levels <- levels(unique(plot_data$plot$data[[input[[paste0("geom_jitter_colour_fill_by_group_", tab_id)]]]]))
                   }
                 }
-                
-                
               }
             }
           } else {
@@ -5136,16 +5305,6 @@ server <- function(input, output, session) {
               # fills gaps with black colors
               eval(parse(text = paste0("selected_colours_symbol_fill_", tab_id, "$colors <- c(get(paste0('selected_colours_symbol_fill_', tab_id))$colors, additional_colors)")))
               
-              # if (tab_id == "table") {
-              #   selected_colours_symbol_fill_table$colors <- c(get(paste0("selected_colours_symbol_fill_", tab_id))$colors, additional_colors)
-              # } else if (tab_id == "icc") {
-              #   selected_colours_symbol_fill_icc$colors <- c(get(paste0("selected_colours_symbol_fill_", tab_id))$colors, additional_colors)
-              # } else if (tab_id == "icc_two"){
-              #   selected_colours_symbol_fill_icc_two$colors <- c(get(paste0("selected_colours_symbol_fill_", tab_id))$colors, additional_colors)
-              # } else if (tab_id == "box_bar_scatter_violin"){
-              #   selected_colours_symbol_fill_box_bar_scatter_violin$colors <- c(get(paste0("selected_colours_symbol_fill_", tab_id))$colors, additional_colors)
-              # }
-
               # Reset input values
               for (i in (length(get(paste0("selected_colours_symbol_fill_", tab_id))$colors) - num_colors_to_add + 1):length(get(paste0("selected_colours_symbol_fill_", tab_id))$colors)) {
                 updateColourInput(session, paste0("symbol_fill_", tab_id, i), value = "black")
@@ -5216,13 +5375,9 @@ server <- function(input, output, session) {
               if (!is.null(group_var_levels)) {
                 for (i in 1:length(group_var_levels)) {
                   if (is.null(input[[paste0("symbol_fill_", tab_id, i)]]) || (length(get(paste0("selected_colours_symbol_fill_", tab_id))$colors) < length(group_var_levels))) {
-                    #get(paste0("selected_colours_symbol_fill_", tab_id))$colors[[i]] <- "black"[i]
-                    #eval(parse(text = paste0("get(selected_colours_symbol_fill_", tab_id, ")$colors[[", i, "]] <- '", "black"[i], "'")))
                     eval(parse(text = paste0("selected_colours_symbol_fill_", tab_id, "$colors[[", i, "]] <- 'black'")))
                     
-                    
                   } else if (!is.null(input[[paste0("symbol_fill_", tab_id, i)]])) {
-                    #get(paste0("selected_colours_symbol_fill_", tab_id))$colors[[i]] <- input[[paste0("symbol_fill_", tab_id, i)]]
                     eval(parse(text = paste0("selected_colours_symbol_fill_", tab_id, "$colors[[", i, "]] <- '", input[[paste0("symbol_fill_", tab_id, i)]], "'")))
                   }
                 }
@@ -5239,7 +5394,6 @@ server <- function(input, output, session) {
                   click_count_superplot_plot_symbol_fill(0)
                 }
               }
-              
             })
             
             #calls colour variables for UI
@@ -5267,9 +5421,7 @@ server <- function(input, output, session) {
             } else {
               plot_selected <- plot_for_all_icc()    
             }
-            
-            #plot_selected <- plot_for_all_icc()
-            
+
           } else if (input$navpage == 'Intraclass correlation & Linear Mixed Models' && input$tabselected2 == 'Linear Mixed Model') {
             tab_id <- "icc_two"
             if (!is.ggplot(plot_for_all_icc_two())){
@@ -5277,8 +5429,7 @@ server <- function(input, output, session) {
             } else {
               plot_selected <- plot_for_all_icc_two()    
             }
-            #plot_selected <- plot_for_all_icc_two()
-            
+
           } else if (input$navpage == 'Box, Bar, Scatter, Violin and Raincloud') {
             tab_id <- "box_bar_scatter_violin"
             if (!is.ggplot(plot_for_all_box_bar_scatter_violin())){
@@ -5286,8 +5437,7 @@ server <- function(input, output, session) {
             } else {
               plot_selected <- plot_for_all_box_bar_scatter_violin()    
             }
-            #plot_selected <- plot_for_all_box_bar_scatter_violin()
-            
+
           } else if (input$navpage == 'Superplot') {
             tab_id <- "superplot"
             plot_selected <- plot_for_all_superplot()
@@ -5321,8 +5471,6 @@ server <- function(input, output, session) {
                     group_var_levels <- levels(unique(plot_data$plot$data[[input[[paste0("geom_boxplot_colour_fill_by_group_", tab_id)]]]]))
                   }
                 }
-                
-                
               }
             }
           } else {
@@ -5380,8 +5528,7 @@ server <- function(input, output, session) {
             #adds observe for updating variables
             observe({
               req(input[[paste0("geom_boxplot_colour_fill_by_group_", tab_id)]] != "Single Colour" && eval(parse(text = paste0("click_count_", tab_id, "_plot_box_border()"))) > 0 && input[[paste0("update_options_", tab_id)]])
-              # !is.null(plot_for_all()) & 
-              
+
               # gets grouping variables from plots
               # for plots that are not lists ##is ggplot might be ideal###
               if (is.ggplot(plot_selected)) {
@@ -5410,8 +5557,6 @@ server <- function(input, output, session) {
                         group_var_levels <- levels(unique(plot_data$plot$data[[input[[paste0("geom_boxplot_colour_fill_by_group_", tab_id)]]]]))
                       }
                     }
-                    
-                    
                   }
                 }
               } else {
@@ -5440,13 +5585,9 @@ server <- function(input, output, session) {
               if (!is.null(group_var_levels)) {
                 for (i in 1:length(group_var_levels)) {
                   if (is.null(input[[paste0("box_line_", tab_id, i)]]) || (length(get(paste0("selected_colors_boxplot_line_", tab_id))$colors) < length(group_var_levels))) {
-                   # eval(parse(text = paste0("get(selected_colors_boxplot_line_", tab_id, ")$colors[[", i, "]] <- '", "black"[i], "'")))
-                    #selected_colors_boxplot_line$colors[[i]] <- "black"[i]
                     eval(parse(text = paste0("selected_colors_boxplot_line_", tab_id, "$colors[[", i, "]] <- 'black'")))
                     
-                    
                   } else if (!is.null(input[[paste0("box_line_", tab_id, i)]])) {
-                    #selected_colors_boxplot_line$colors[[i]] <- input[[paste0("box_line_", tab_id, i)]]
                     eval(parse(text = paste0("selected_colors_boxplot_line_", tab_id, "$colors[[", i, "]] <- '", input[[paste0("box_line_", tab_id, i)]], "'")))
                   }
                 }
@@ -5459,7 +5600,7 @@ server <- function(input, output, session) {
                   click_count_icc_plot_box_border(0)
                 } else if (input$navpage == 'Box, Bar, Scatter, Violin and Raincloud') {
                   click_count_box_bar_scatter_violin_plot_box_border(0)
-                } else if (input$nvapage == 'Superplot') {
+                } else if (input$navpage == 'Superplot') {
                   click_count_superplot_plot_box_border(0)
                 }
               }
@@ -5473,7 +5614,6 @@ server <- function(input, output, session) {
         ##Render UI for colour boxplot fill selection for each group_var
         box_fill_ui <- renderUI({
           req((input$geom_boxplot_colour_fill_by_group_table != "Single Colour" || input$geom_boxplot_colour_fill_by_group_icc != "Single Colour" || input$geom_boxplot_colour_fill_by_group_icc_two != "Single Colour" || input$geom_boxplot_colour_fill_by_group_box_bar_scatter_violin != "Single Colour" || input$geom_boxplot_colour_fill_by_group_superplot != "Single Colour"))
-          # !is.null(plot_for_all()) & 
           #Gets plots and tab information based on selection
           if (input$navpage == 'Data Selection and Visualization' && input$tabselected =='Table & Graph') {
             tab_id <- "table"
@@ -5490,9 +5630,7 @@ server <- function(input, output, session) {
             } else {
               plot_selected <- plot_for_all_icc()    
             }
-            
-            #plot_selected <- plot_for_all_icc()
-            
+
           } else if (input$navpage == 'Intraclass correlation & Linear Mixed Models' && input$tabselected2 == 'Linear Mixed Model') {
             tab_id <- "icc_two"
             if (!is.ggplot(plot_for_all_icc_two())){
@@ -5500,8 +5638,7 @@ server <- function(input, output, session) {
             } else {
               plot_selected <- plot_for_all_icc_two()    
             }
-            #plot_selected <- plot_for_all_icc_two()
-            
+
           } else if (input$navpage == 'Box, Bar, Scatter, Violin and Raincloud') {
             tab_id <- "box_bar_scatter_violin"
             if (!is.ggplot(plot_for_all_box_bar_scatter_violin())){
@@ -5509,8 +5646,7 @@ server <- function(input, output, session) {
             } else {
               plot_selected <- plot_for_all_box_bar_scatter_violin()    
             }
-            #plot_selected <- plot_for_all_box_bar_scatter_violin()
-            
+
           } else if (input$navpage == 'Superplot') {
             tab_id <- "superplot"
             plot_selected <- plot_for_all_superplot()
@@ -5544,8 +5680,6 @@ server <- function(input, output, session) {
                     group_var_levels <- levels(unique(plot_data$plot$data[[input[[paste0("geom_boxplot_colour_fill_by_group_", tab_id)]]]]))
                   }
                 }
-                
-                
               }
             }
           } else {
@@ -5579,8 +5713,7 @@ server <- function(input, output, session) {
             if (num_colors_to_add > 0) {
               additional_colors <- rep("lightblue", num_colors_to_add)
               eval(parse(text = paste0("selected_colors_boxplot_fill_", tab_id, "$colors <- c(get(paste0('selected_colors_boxplot_fill_', tab_id))$colors, additional_colors)")))
-              #selected_colors_boxplot_fill$colors <- c( selected_colors_boxplot_fill$colors, additional_colors)
-              
+
               # Reset input values
               for (i in (length(get(paste0("selected_colors_boxplot_fill_", tab_id))$colors) - num_colors_to_add + 1):length(get(paste0("selected_colors_boxplot_fill_", tab_id))$colors)) {
                 updateColourInput(session, paste0("box_fill_", tab_id, i), value = "lightblue")
@@ -5662,13 +5795,10 @@ server <- function(input, output, session) {
               if (!is.null(group_var_levels)) {
                 for (i in 1:length(group_var_levels)) {
                   if (is.null(input[[paste0("box_fill_", tab_id, i)]]) || (length(get(paste0("selected_colors_boxplot_fill_", tab_id))$colors) < length(group_var_levels))) {
-                    #selected_colors_boxplot_fill$colors[[i]] <- "lightblue"[i]
-                    #eval(parse(text = paste0("get(selected_colors_boxplot_fill_", tab_id, ")$colors[[", i, "]] <- '", "lightblue"[i], "'")))
                     eval(parse(text = paste0("selected_colors_boxplot_line_", tab_id, "$colors[[", i, "]] <- 'lightblue'")))
                     
                   } else if (!is.null(input[[paste0("box_fill_", tab_id, i)]])) {
                     eval(parse(text = paste0("selected_colors_boxplot_fill_", tab_id, "$colors[[", i, "]] <- '", input[[paste0("box_fill_", tab_id, i)]], "'")))
-                    #selected_colors_boxplot_fill$colors[[i]] <- input[[paste0("box_fill_", tab_id, i)]]
                   }
                 }
                 #resets click count
@@ -5690,13 +5820,11 @@ server <- function(input, output, session) {
             do.call(tagList, c(colour_inputs_boxplot_fill))
           }
         })
-        
-        ####################################
-        ##### TRYING NEW STUFF############# 
-        
+
       # creates variables to stores tab_id info, data and names of variables
       tab_id <- reactiveVal()
-      
+        tab_id("table")
+        
       # enables Plot button for table plot when applicable
       observeEvent(c(selected_vars_plot(),input$x_axis, input$y_axis, input$y_var_table, input$update_options_table, input$show_additional_group_legend_table),{
         
@@ -5729,7 +5857,6 @@ server <- function(input, output, session) {
           tab_id("table")
         }
       })
-      
       
       #Generates plot that can be used for several graphs
       observeEvent(input[[paste0("submit_plot_", tab_id())]],{
@@ -5799,12 +5926,11 @@ server <- function(input, output, session) {
           z_var <- input$x_var_superplot
         }
         
-        #shinyjs::disable("submit_plot_table")
-        
-        
         tryCatch({
         #adjust selection for icc navpage when plot is first generated
           if (tab_id == "icc" && input$submit_plot_icc[1] == 0){
+            prev_input_values$geom_boxplot_colour_fill_by_group = input[[paste0("geom_boxplot_colour_fill_by_group_", tab_id)]]
+            
           prev_input_values$geom_jitter_colour_fill_by_group = input[[paste0("geom_jitter_colour_fill_by_group_", tab_id)]]
           prev_input_values$maginal_plot_legend = input[[paste0("maginal_plot_legend_", tab_id)]]
         } else if (input$navpage == 'Superplot' && input$submit_plot_superplot[1] == 0){
@@ -5813,6 +5939,7 @@ server <- function(input, output, session) {
         }
           observeEvent(input$group_var_icc,{
             prev_input_values$geom_jitter_colour_fill_by_group = input[[paste0("geom_jitter_colour_fill_by_group_", tab_id)]]
+            prev_input_values$geom_boxplot_colour_fill_by_group = input[[paste0("geom_boxplot_colour_fill_by_group_", tab_id)]]
             prev_input_values$maginal_plot_legend = input[[paste0("maginal_plot_legend_", tab_id)]]
           })
         }, error = function(e) {
@@ -5848,7 +5975,7 @@ server <- function(input, output, session) {
           prev_input_values$y_text_colour = input[[paste0("y_text_colour_", tab_id)]]
           prev_input_values$y_text_font = as.character(input[[paste0("y_text_font_", tab_id)]])
           
-          #Scales Box
+          #Scales
           prev_input_values$x_start_range = input[[paste0("x_start_range_", tab_id)]]
           prev_input_values$x_end_range = input[[paste0("x_end_range_", tab_id)]]
           prev_input_values$y_start_range = input[[paste0("y_start_range_", tab_id)]]
@@ -5859,7 +5986,7 @@ server <- function(input, output, session) {
           ## add scale breaks###
           ######################
           
-          #Labels and Titles Box
+          #Labels and Titles
           prev_input_values$x_axis_text_size = input[[paste0("x_axis_text_size_", tab_id)]]
           prev_input_values$x_axis_text_colour = input[[paste0("x_axis_text_colour_", tab_id)]]
           prev_input_values$x_axis_text_face = input[[paste0("x_axis_text_face_", tab_id)]]
@@ -5875,7 +6002,7 @@ server <- function(input, output, session) {
           prev_input_values$y_axis_text_margin = input[[paste0("y_axis_text_margin_", tab_id)]]
           prev_input_values$y_axis_text_title = input[[paste0("y_axis_text_title_", tab_id)]]
           
-          #Symbols Box
+          #Symbols
           prev_input_values$geom_jitter_colour_fill_by_group = input[[paste0("geom_jitter_colour_fill_by_group_", tab_id)]]
           prev_input_values$color_var = input[[paste0("color_var_", tab_id)]]
           prev_input_values$symbol_fill = input[[paste0("symbol_fill_", tab_id)]]
@@ -5930,7 +6057,7 @@ server <- function(input, output, session) {
           prev_input_values$box_transparency = input[[paste0("box_transparency_", tab_id)]]
           prev_input_values$sd_se_bar_chart = input[[paste0("sd_se_bar_chart_", tab_id)]]
           
-          #Background Box
+          #Background Panel
           prev_input_values$colour_background = input[[paste0("colour_background_", tab_id)]]
           prev_input_values$colour_background_border = input[[paste0("colour_background_border_", tab_id)]]
           prev_input_values$colour_background_border_thickness = input[[paste0("colour_background_border_thickness_", tab_id)]]
@@ -5994,7 +6121,6 @@ server <- function(input, output, session) {
           prev_input_values$zero_line_colour = input[[paste0("effect_size_zero_colour_", tab_id)]]
           prev_input_values$zero_line_type = input[[paste0("effect_size_zero_line_type_", tab_id)]]
           prev_input_values$zero_line_width = input[[paste0("effect_size_zero_line_width_", tab_id)]]
-          
         }
         
         eval(parse(text = paste0("click_count_", tab_id, "(0)")))
@@ -6002,9 +6128,6 @@ server <- function(input, output, session) {
         # reactive plot
             assign(paste0("plot_for_all_", tab_id), reactive({
          tryCatch({
-        
-          #req(input$submit_plot_table || input$submit_plot_icc_two || input$submit_plot_icc || input$submit_plot_box_bar_scatter_violin || input$submit_plot_superplot)
-          
           # adjust axis titles beforehand
           prev_input_values$y_axis_text_title = input[[paste0("y_axis_text_title_", tab_id)]]
           prev_input_values$x_axis_text_title = input[[paste0("x_axis_text_title_", tab_id)]]
@@ -6023,10 +6146,10 @@ server <- function(input, output, session) {
             } else if (input$mean_or_median_superplot == "median") {
               Replicate_means_or_medians <- data %>% 
                 dplyr::group_by(!!as.name(x_var), !!as.name(z_var)) %>% 
-                summarise(across(everything(), median, na.rm = TRUE))
+                summarise(across(where(is.numeric), median, na.rm = TRUE))
               
               Total_replicates <- Replicate_means_or_medians %>% 
-                summarise(across(everything(), median, na.rm = TRUE))
+                summarise(across(where(is.numeric), median, na.rm = TRUE))
             }
             
             #function for IQR
@@ -6105,12 +6228,9 @@ server <- function(input, output, session) {
             }
           }
           
-          
           # updates data for brushed points
           assign(paste0("brushed_points_", tab_id), reactiveVal(filtered_data))
-          #brushed_points_table(filtered_data)
-          #eval(parse(text = paste0("brushed_points_", tab_id, "(", filtered_data, ")")))
-          
+
           # for brushed points when plotting
           if (tab_id == "table"){
             output$table_brush_selection <- renderTable({
@@ -6142,13 +6262,7 @@ server <- function(input, output, session) {
                 brushedPoints(filtered_data, input$plot_brush_box_bar_scatter_violin_plot, xvar = input$group_var_box_bar_scatter_violin, yvar = input$z_var_box_bar_scatter_violin)
               }
             })
-          } else if (tab_id == "superplot"){
-            output$superplot_brush_selection <- renderTable({
-              brushedPoints(filtered_data, input$plot_brush_superplot, xvar = input$group_var_superplot, yvar = input$y_var_superplot)
-            })
-          }
-          
-          
+          } 
           
           # defines colours for symbol border and fill
           # for symbol border
@@ -6273,6 +6387,16 @@ server <- function(input, output, session) {
           scale_fill_geom_boxplot <- scale_fill_manual(name = legend_name_boxplot, values = boxplot_fill_colour_scale)
           scale_border_geom_boxplot <- scale_color_manual(name = legend_name_boxplot, values = boxplot_border_colour_scale)
           
+          
+          #filters na values for LMM facet_grid
+          if(tab_id == "icc_two"){
+            if (input$num_levels == 3) {
+              filtered_data <- data %>% filter(!is.na(!!sym(w_var)))
+            } else if (input$num_levels == 4){
+              filtered_data <- data %>% filter(!is.na(!!sym(w_var)))
+              filtered_data <- data %>% filter(!is.na(!!sym(extra_var)))
+            }
+          }
           ########################################################################
           # adds Box-plot if selected
            if (input$navpage != "Superplot" && input[[paste0("choose_" , tab_id)]] == "Box-plot") {
@@ -6292,16 +6416,16 @@ server <- function(input, output, session) {
                  # for additional grouping variable  
                  (if (input[[paste0("show_additional_group_legend_", tab_id)]] == TRUE &&  prev_input_values$geom_boxplot_colour_fill_by_group == z_var) {
                    geom_boxplot(aes(colour = factor(.data[[z_var]], levels = additional_group_levels), 
-                                    fill = factor(.data[[z_var]], levels = additional_group_levels)), 
+                                    fill = factor(.data[[z_var]], levels = additional_group_levels), group = .data[[x_var]]), 
                                 size = prev_input_values$box_line_thickness, 
                                 alpha = prev_input_values$box_transparency, 
                                 width = prev_input_values$box_width, 
                                 notch = FALSE, 
                                 outlier.shape = NA, 
                                 coef = 1E100,
+                                position = position_dodge(width = NULL),
                                 show.legend = ("Box" %in% prev_input_values$legends)
                                 )
-                   
                  } else if (prev_input_values$geom_boxplot_colour_fill_by_group == x_var || prev_input_values$geom_boxplot_colour_fill_by_group == "Single Colour"){
                    # for initial grouping variable
                    geom_boxplot(aes(colour = factor(.data[[x_var]], levels = group_levels), 
@@ -6324,9 +6448,10 @@ server <- function(input, output, session) {
                #adjust colour, shape, fill, size, edge thickness, transparency for datapoints
                # for additional grouping variable
                (if(input[[paste0("show_additional_group_legend_", tab_id)]] == TRUE && prev_input_values$geom_jitter_colour_fill_by_group == z_var && prev_input_values$geom_boxplot_colour_fill_by_group == z_var) {
-                 geom_point(aes(colour = factor(.data[[z_var]], levels = additional_group_levels),
+                 geom_point(data = filtered_data %>% na.omit() %>% group_by(.data[[z_var]]) %>% filter(n() >= 0),
+                   aes(colour = factor(.data[[z_var]], levels = additional_group_levels),
                                 fill = factor(.data[[z_var]], levels = additional_group_levels)),
-                            position = position_jitterdodge(jitter.width = prev_input_values$symbol_jitter),
+                            position = position_jitterdodge(jitter.width = prev_input_values$symbol_jitter, dodge.width = prev_input_values$box_width),
                             size = prev_input_values$symbol_size,
                             shape = as.numeric(prev_input_values$symbol_shape),
                             stroke = prev_input_values$symbol_edge_thickness,
@@ -6420,16 +6545,22 @@ server <- function(input, output, session) {
             
               # adds errorbar if applicable
                 (if (prev_input_values$sd_se_bar_chart == "Standard deviation" && input[[paste0("show_additional_group_legend_", tab_id)]] == TRUE &&  prev_input_values$geom_boxplot_colour_fill_by_group == z_var){
-                  #stat_summary(fun.data = "mean_sdl", fun.args = list(mult = 1), geom = "errorbar", color = boxplot_border_colour_scale, width = as.numeric(input$box_width_box_bar_scatter_violin * 0.5), size = input$box_line_thickness_box_bar_scatter_violin)
-                  stat_summary(fun.data = "mean_sdl", fun.args = list(mult = 1), geom = "errorbar",
+                  stat_summary(data = filtered_data %>% na.omit() %>% group_by(.data[[z_var]]) %>% filter(n() >= 2),
+                               fun.data = "mean_sdl", fun.args = list(mult = 1), 
+                               geom = "errorbar",
                                aes(colour = factor(.data[[z_var]], levels = additional_group_levels)),
-                               width = as.numeric(prev_input_values$box_width * 0.5),
-                               size = prev_input_values$box_line_thickness)
+                               width = prev_input_values$box_width,
+                               position = position_dodge(width = NULL),
+                               size = prev_input_values$box_line_thickness,
+                               show.legend = FALSE)
                 } else if (prev_input_values$sd_se_bar_chart == "Standard error of mean" && input[[paste0("show_additional_group_legend_", tab_id)]] == TRUE &&  prev_input_values$geom_boxplot_colour_fill_by_group == z_var){
-                  geom_errorbar(stat = "summary", fun.data = "mean_se", position = "dodge",
+                  geom_errorbar(data = filtered_data %>% na.omit() %>% group_by(.data[[z_var]]) %>% filter(n() >= 2),
+                                stat = "summary", fun.data = "mean_se", 
                                 aes(colour = factor(.data[[z_var]], levels = additional_group_levels)),
-                                width = as.numeric(prev_input_values$box_width * 0.5),
-                                size = prev_input_values$box_line_thickness)
+                                width = prev_input_values$box_width * 0.5,
+                                position = position_dodge(width = NULL),
+                                size = prev_input_values$box_line_thickness,
+                                show.legend = FALSE)
                 } else if (prev_input_values$sd_se_bar_chart == "None" && input[[paste0("show_additional_group_legend_", tab_id)]] == TRUE &&  prev_input_values$geom_boxplot_colour_fill_by_group == z_var) {
                   geom_errorbar(stat = "summary", fun.data = "none")
                 } else if (prev_input_values$sd_se_bar_chart == "Standard deviation" && (prev_input_values$geom_boxplot_colour_fill_by_group == x_var || prev_input_values$geom_boxplot_colour_fill_by_group == "Single Colour")){
@@ -6445,6 +6576,26 @@ server <- function(input, output, session) {
                 } else if (prev_input_values$sd_se_bar_chart == "None" && (prev_input_values$geom_boxplot_colour_fill_by_group == x_var || prev_input_values$geom_boxplot_colour_fill_by_group == "Single Colour")) {
                   geom_errorbar(stat = "summary", fun.data = "none")
                 }) +
+              
+              # adds mean to errobar
+              (if ((prev_input_values$sd_se_bar_chart == "Standard deviation" || prev_input_values$sd_se_bar_chart == "Standard error of mean") && input[[paste0("show_additional_group_legend_", tab_id)]] == TRUE &&  prev_input_values$geom_boxplot_colour_fill_by_group == z_var){
+                stat_summary(data = filtered_data %>% na.omit() %>% group_by(.data[[z_var]]) %>% filter(n() >= 2),
+                             fun = "mean", 
+                             geom = "crossbar",
+                             aes(colour = factor(.data[[z_var]], levels = additional_group_levels)),
+                             width = prev_input_values$box_width,
+                             position = position_dodge(width = NULL),
+                             size = prev_input_values$box_line_thickness/2,
+                             show.legend = FALSE)
+              } else if ((prev_input_values$sd_se_bar_chart == "Standard deviation" || prev_input_values$sd_se_bar_chart == "Standard error of mean") && prev_input_values$geom_boxplot_colour_fill_by_group == x_var || prev_input_values$geom_boxplot_colour_fill_by_group == "Single Colour"){
+                stat_summary(fun = "mean", 
+                             geom = "crossbar",
+                             aes(colour = factor(.data[[x_var]], levels = group_levels)),
+                             width = prev_input_values$box_width,
+                             position = position_dodge(width = NULL),
+                             size = prev_input_values$box_line_thickness/2,
+                             show.legend = FALSE)
+              })+
               
               # adds colour scales for geom_errorbar
               scale_fill_geom_boxplot +
@@ -6619,13 +6770,14 @@ server <- function(input, output, session) {
                 # for additional grouping variable
                 (if (input[[paste0("show_additional_group_legend_", tab_id)]] == TRUE &&  prev_input_values$geom_boxplot_colour_fill_by_group == z_var) {
                   geom_violin(aes(colour = factor(.data[[z_var]], levels = additional_group_levels), 
-                                   fill = factor(.data[[z_var]], levels = additional_group_levels)), 
+                                   fill = factor(.data[[z_var]], levels = additional_group_levels), group = .data[[x_var]]), 
                                size = prev_input_values$box_line_thickness, 
                                alpha = prev_input_values$box_transparency, 
                                width = prev_input_values$box_width, 
                                notch = FALSE, 
                                outlier.shape = NA, 
                                coef = 1E100,
+                              position = position_dodge(width = NULL),
                               show.legend = ("Violin" %in% prev_input_values$legends)
                               )
                   
@@ -6642,34 +6794,64 @@ server <- function(input, output, session) {
                               show.legend = ("Violin" %in% prev_input_values$legends)
                               )
                 }) +
-              
-              
+             
+            # stat summary plots for when there is 1 observation (FIX IT)
               # adds errorbar if applicable
               (if (prev_input_values$sd_se_bar_chart == "Standard deviation" && input[[paste0("show_additional_group_legend_", tab_id)]] == TRUE &&  prev_input_values$geom_boxplot_colour_fill_by_group == z_var){
-                stat_summary(fun.data = "mean_sdl", fun.args = list(mult = 1), geom = "errorbar",
+                stat_summary(data = filtered_data %>% na.omit() %>% group_by(.data[[z_var]]) %>% filter(n() >= 2),
+                            fun.data = "mean_sdl", fun.args = list(mult = 1), 
+                            geom = "errorbar",
                              aes(colour = factor(.data[[z_var]], levels = additional_group_levels)),
-                             width = as.numeric(prev_input_values$box_width * 0.5),
-                             size = prev_input_values$box_line_thickness)
+                            width = prev_input_values$box_width,
+                             position = position_dodge(width = NULL),
+                             size = prev_input_values$box_line_thickness,
+                            show.legend = FALSE
+                  ) 
               } else if (prev_input_values$sd_se_bar_chart == "Standard error of mean" && input[[paste0("show_additional_group_legend_", tab_id)]] == TRUE &&  prev_input_values$geom_boxplot_colour_fill_by_group == z_var){
-                geom_errorbar(stat = "summary", fun.data = "mean_se", position = "dodge",
+                geom_errorbar(data = filtered_data %>% na.omit() %>% group_by(.data[[z_var]]) %>% filter(n() >= 2),
+                  stat = "summary", fun.data = "mean_se", 
                               aes(colour = factor(.data[[z_var]], levels = additional_group_levels)),
-                              width = as.numeric(prev_input_values$box_width * 0.5),
-                              size = prev_input_values$box_line_thickness)
+                              width = prev_input_values$box_width,
+                              position = position_dodge(width = NULL),
+                              size = prev_input_values$box_line_thickness,
+                              show.legend = FALSE)
               } else if (prev_input_values$sd_se_bar_chart == "None" && input[[paste0("show_additional_group_legend_", tab_id)]] == TRUE &&  prev_input_values$geom_boxplot_colour_fill_by_group == z_var) {
                 geom_errorbar(stat = "summary", fun.data = "none")
               } else if (prev_input_values$sd_se_bar_chart == "Standard deviation" && (prev_input_values$geom_boxplot_colour_fill_by_group == x_var || prev_input_values$geom_boxplot_colour_fill_by_group == "Single Colour")){
                 stat_summary(fun.data = "mean_sdl", fun.args = list(mult = 1), geom = "errorbar",
                              aes(colour = factor(.data[[x_var]], levels = group_levels)),
                              width = as.numeric(prev_input_values$box_width * 0.5),
-                             size = prev_input_values$box_line_thickness)
+                             size = prev_input_values$box_line_thickness,
+                             show.legend = FALSE)
               } else if (prev_input_values$sd_se_bar_chart == "Standard error of mean" && (prev_input_values$geom_boxplot_colour_fill_by_group == x_var || prev_input_values$geom_boxplot_colour_fill_by_group == "Single Colour")){
                 geom_errorbar(stat = "summary", fun.data = "mean_se", position = "dodge",
                               aes(colour = factor(.data[[x_var]], levels = group_levels)),
                               width = as.numeric(prev_input_values$box_width * 0.5),
-                              size = prev_input_values$box_line_thickness)
+                              size = prev_input_values$box_line_thickness,
+                              show.legend = FALSE)
               } else if (prev_input_values$sd_se_bar_chart == "None" && (prev_input_values$geom_boxplot_colour_fill_by_group == x_var || prev_input_values$geom_boxplot_colour_fill_by_group == "Single Colour")) {
                 geom_errorbar(stat = "summary", fun.data = "none")
               }) +
+              
+              # adds mean to errobar
+              (if ((prev_input_values$sd_se_bar_chart == "Standard deviation" || prev_input_values$sd_se_bar_chart == "Standard error of mean") && input[[paste0("show_additional_group_legend_", tab_id)]] == TRUE &&  prev_input_values$geom_boxplot_colour_fill_by_group == z_var){
+                  stat_summary(data = filtered_data %>% na.omit() %>% group_by(.data[[z_var]]) %>% filter(n() >= 2),
+                               fun = "mean", 
+                               geom = "crossbar",
+                               aes(colour = factor(.data[[z_var]], levels = additional_group_levels)),
+                               width = prev_input_values$box_width,
+                               position = position_dodge(width = NULL),
+                               size = prev_input_values$box_line_thickness/2,
+                               show.legend = FALSE)
+                } else if ((prev_input_values$sd_se_bar_chart == "Standard deviation" || prev_input_values$sd_se_bar_chart == "Standard error of mean") && prev_input_values$geom_boxplot_colour_fill_by_group == x_var || prev_input_values$geom_boxplot_colour_fill_by_group == "Single Colour"){
+                  stat_summary(fun = "mean", 
+                               geom = "crossbar",
+                               aes(colour = factor(.data[[x_var]], levels = group_levels)),
+                               width = prev_input_values$box_width,
+                               position = position_dodge(width = NULL),
+                               size = prev_input_values$box_line_thickness/2,
+                               show.legend = FALSE)
+                })+
               
               # adds colour scale for geom_violin
               scale_fill_geom_boxplot +
@@ -6681,7 +6863,7 @@ server <- function(input, output, session) {
                 (if(input[[paste0("show_additional_group_legend_", tab_id)]] == TRUE && prev_input_values$geom_jitter_colour_fill_by_group == z_var && prev_input_values$geom_boxplot_colour_fill_by_group == z_var) {
                   geom_point(aes(colour = factor(.data[[z_var]], levels = additional_group_levels),
                                  fill = factor(.data[[z_var]], levels = additional_group_levels)),
-                             position = position_jitterdodge(jitter.width = prev_input_values$symbol_jitter),
+                             position = position_jitterdodge(jitter.width = prev_input_values$symbol_jitter, dodge.width = 0.8),
                              size = prev_input_values$symbol_size,
                              shape = as.numeric(prev_input_values$symbol_shape),
                              stroke = prev_input_values$symbol_edge_thickness,
@@ -6757,7 +6939,7 @@ server <- function(input, output, session) {
               # for additional grouping variable
               (if (input[[paste0("show_additional_group_legend_", tab_id)]] == TRUE &&  prev_input_values$geom_boxplot_colour_fill_by_group == z_var) {
                 geom_boxplot(aes(colour = factor(.data[[z_var]], levels = additional_group_levels), 
-                                 fill = factor(.data[[z_var]], levels = additional_group_levels)), 
+                                 fill = factor(.data[[z_var]], levels = additional_group_levels), group = .data[[x_var]]), 
                              size = prev_input_values$box_line_thickness, 
                              alpha = prev_input_values$box_transparency, 
                              width = prev_input_values$raincloud_box_width, 
@@ -6805,7 +6987,6 @@ server <- function(input, output, session) {
                                adjust =  prev_input_values$raincloud_halfeye_line_thickness,
                                aes(colour = factor(.data[[x_var]], levels = group_levels),
                                    fill = factor(.data[[x_var]], levels = group_levels)),
-                           # aes( fill = factor(.data[[x_var]], levels = group_levels)),
                                alpha = prev_input_values$raincloud_halfeye_transparency,
                                justification = prev_input_values$raincloud_halfeye_justification,
                                 show.legend = "Cloud" %in% prev_input_values$legends
@@ -6839,8 +7020,7 @@ server <- function(input, output, session) {
                               shape = as.numeric(as.numeric(prev_input_values$symbol_shape)),
                               stroke = prev_input_values$symbol_edge_thickness,
                               alpha = prev_input_values$symbol_transparency,
-                              width = prev_input_values$symbol_jitter#,
-                              #show.legend = "Dots" %in% prev_input_values$legends
+                              width = prev_input_values$symbol_jitter
                               )
                 })+
               
@@ -6848,10 +7028,6 @@ server <- function(input, output, session) {
               scale_fill_geom_jitter_jitter +
               scale_border_geom_jitter +
               new_scale_color() + new_scale_fill()
-            
-              
-            
-            
             
           # for Superplot Scatter
           } else if (input$navpage == "Superplot" && input[[paste0("choose_", tab_id)]] == "Scatter"){
@@ -6987,6 +7163,7 @@ server <- function(input, output, session) {
                                fun.data = "mean_sdl", 
                                fun.args = list(mult = 1), 
                                geom = "errorbar", 
+                               linewidth = prev_input_values$box_line_thickness,
                                width = as.numeric(prev_input_values$box_width * 0.5), 
                                colour = "black")
                 } else if (input$mean_or_median_superplot == "median"){
@@ -6994,6 +7171,7 @@ server <- function(input, output, session) {
                                fun.data = median_IQR, 
                                fun.args = NULL, 
                                geom = "errorbar", 
+                               linewidth = prev_input_values$box_line_thickness,
                                width = as.numeric(prev_input_values$box_width * 0.5), 
                                colour = "black")
                 })
@@ -7109,11 +7287,6 @@ server <- function(input, output, session) {
                 )
               })+
               
-              # adds colour scales
-              scale_fill_geom_jitter_jitter +
-              scale_border_geom_jitter +
-              new_scale_color() + new_scale_fill()+
-              
               # Show mean or median for each group
               stat_summary(data = Total_replicates, fun = function(x) {
                 if (input$mean_or_median_superplot == "mean") {
@@ -7186,16 +7359,25 @@ server <- function(input, output, session) {
                                justification = prev_input_values$raincloud_halfeye_justification,
                                show.legend = "Cloud" %in% prev_input_values$legends
                   ) 
-              })
+              }) +
+              # adds colour scales
+              scale_fill_geom_jitter_jitter +
+              scale_border_geom_jitter +
+              new_scale_color() + new_scale_fill()
           }
           ######################################################################
           # adds common elements to the main plot
           
           neuro_plot <- neuro_plot +
+            ## for future work (SCALE BREAKS)
+            ###scale_y_break(c(7, 70)) +
+            
+            # scale_y_continuous(limits = c(prev_input_values$y_start_range, prev_input_values$y_end_range),
+            #                    +                        sec.axis = sec_axis(~., breaks = c()))
             
             # x and y labels
             labs(x = prev_input_values$x_axis_text_title, y = prev_input_values$y_axis_text_title) +
-            
+             
             # adjusts x axis scale based on selection
             (if (prev_input_values$x_scale_type == "linear") {
               #adjust minor and major X scale ticks
@@ -7371,6 +7553,7 @@ server <- function(input, output, session) {
             } else if (input$num_levels == 4 && input$tabselected2 == 'Linear Mixed Model' && input$navpage == "Intraclass correlation & Linear Mixed Models"){
               facet_grid(as.formula(paste0("~", extra_var, "~", w_var)), labeller = label_value)
             }) +
+           
             
             theme(
               # Change plot background
@@ -7405,6 +7588,28 @@ server <- function(input, output, session) {
             if (prev_input_values$marginal_plot_legend_title == FALSE) {
               theme (legend.title = element_blank())
             }
+          
+          # gives error message if additional variable is TRUE, used for colour coding and there is at least one plotted group with 1 observation 
+          if (input$navpage != "Superplot" && (input[[paste0("choose_", tab_id)]] == "Violin" || input[[paste0("choose_", tab_id)]] == "Bar-chart") && (prev_input_values$sd_se_bar_chart == "Standard deviation" || prev_input_values$sd_se_bar_chart == "Standard error of mean") && input[[paste0("show_additional_group_legend_", tab_id)]] == TRUE &&  prev_input_values$geom_boxplot_colour_fill_by_group == z_var){
+            # finds how many groups have less than 2 observations
+            groups_less_than_2_obs <- filtered_data %>%
+              na.omit() %>%
+              group_by(.data[[z_var]]) %>%
+              filter(n() < 2)
+            
+            # Number of groups in z_var with less than 2 observations in y_var
+            num_groups_less_than_2_obs <- n_distinct(groups_less_than_2_obs[[z_var]])
+            if (num_groups_less_than_2_obs >0){
+              # shows error message
+              showToast(
+                session = shiny::getDefaultReactiveDomain(), input = input,
+                text = paste0("Errobar and plot alignment might be mismatched since some groups in the ", z_var, " variable have less than 2 observations"),
+                type = "warning",
+                #keepVisible = TRUE,
+                position = "bottom-left"
+              )
+            }
+          }
           
           # adds additional info for scatter plot
           if (input$navpage != "Superplot" && input[[paste0("choose_", tab_id)]] == "Scatter") {
@@ -7515,7 +7720,6 @@ server <- function(input, output, session) {
             return(list(neuro_plot, neuro_plot_ggmarginal))
           } else {
             return(neuro_plot)
-            
           }
           
           eval(parse(text = paste0("click_count_", tab_id, "(0)")))

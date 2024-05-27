@@ -53,13 +53,13 @@ plots_data_representation_superplot_ui <- function() {
                  column(width = 2, div(actionButton("reset_superplot", "Clear plot", icon = icon("trash")), style = "margin-left: 10px;"))
                ),
                
-               
                #adds mean or median choices for plotting
                radioButtons("mean_or_median_superplot","Choose statistic to display:",               
                             choices = list("Mean with SD" = "mean",
                                            "Median with IQR" = "median"),
                             selected = "mean")
             ),
+            
             # bootstrapped effect size options
             conditionalPanel(
               condition = "input.superplot_tab == 'Superplot' && output.data_file_superplot_uploaded && input.group_var_superplot.length > 0 && input.x_var_superplot.length > 0",
@@ -119,14 +119,12 @@ plots_data_representation_superplot_ui <- function() {
                         conditionalPanel(condition = "input.submit_plot_superplot > 0",
                                          # renders plots
                                          # without effect size
-                                         plotOutput("superplot_plot", height = 'auto', width = 'auto', brush = brushOpts("plot_brush_superplot_plot")),
+                                         plotOutput("superplot_plot", height = 'auto', width = 'auto'),
                                          # with effect size
-                                         withSpinner(plotOutput("superplot_plot_with_effect_sizes", height = 'auto', width = 'auto'), type = 5),
-                                         # table for brushed points
-                                         tableOutput("superplot_brush_selection"),
+                                         #withSpinner(plotOutput("superplot_plot_with_effect_sizes", height = 'auto', width = 'auto'), custom.css = FALSE, type = 5)
+                                        plotOutput("superplot_plot_with_effect_sizes", height = 'auto', width = 'auto')
+                                         
                         ),
-                        # table for summary data (STILL WORKING ON IT)
-                        tableOutput("data_superplot_rendered"),
                         # error message if plot is not displayed
                         verbatimTextOutput("superplot_error_message"),
                         # adds numeric inputs for plot
@@ -148,7 +146,7 @@ plots_data_representation_superplot_ui <- function() {
                           conditionalPanel(
                             condition = "input.submit_superplot_with_effect_sizes > 0",
                             downloadButton("download_superplot_effect_sizes", "Download plot with effect sizes"),
-                            downloadButton("download_superplot_table_all", "Download plotted data"),
+                            downloadButton("download_superplot_table_all", "Download effect size summary"),
                           )
                         ),
                         #Modal for

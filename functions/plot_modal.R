@@ -4,12 +4,10 @@
 
 plot_modal <- function(tab_id) {
   
-    #################MODAL STARTS###############################################
-    ############################################################################
     bsModal(id = paste0("modal_", tab_id), title = "Plot options", trigger = paste0("options_", tab_id), size = "large",
             
             tabsetPanel(id = paste0("panels_options_", tab_id),
-                        tabPanel("Lines and Ticks Box",
+                        tabPanel("Lines and Ticks",
                                  fluidRow(
                                    #inputs for x axis
                                    column(width = 6,
@@ -51,7 +49,7 @@ plot_modal <- function(tab_id) {
                                    )
                                  )
                         ),
-                        tabPanel("Scales Box",
+                        tabPanel("Scales",
                                  #enter numeric values for scales
                                  numericInput(paste0("x_start_range_", tab_id), "X-axis Start:", value = ""),
                                  numericInput(paste0("x_end_range_", tab_id), "X-axis End:", value = ""),
@@ -74,18 +72,18 @@ plot_modal <- function(tab_id) {
                                    condition = paste0("input.x_scale_type_", tab_id, " == 'log10' || input.x_scale_type_", tab_id, " == 'log2' || input.y_scale_type_", tab_id, " == 'log10' || input.y_scale_type_", tab_id, " == 'log2'"),
                                    selectInput(paste0("numeric_display_type_y_axis_", tab_id), "Numeric display", choices = c("Decimal", "Scientific"))
                                  ),
-                                 # input for scale breaks
-                                 numericInput(paste0("x_num_breaks_", tab_id), "Number of X-axis Breaks:", value = NULL),
-                                 textInput(paste0("x_break_values_", tab_id), "X-axis Break Values:", value = NULL),
-                                 numericInput(paste0("y_num_breaks_", tab_id), "Number of Y-axis Breaks:", value = NULL),
-                                 textInput(paste0("y_break_values_", tab_id), "Y-axis Break Values:", value = NULL)
+                                 # # input for scale breaks (to be finished)
+                                 # numericInput(paste0("x_num_breaks_", tab_id), "Number of X-axis Breaks:", value = NULL),
+                                 # textInput(paste0("x_break_values_", tab_id), "X-axis Break Values:", value = NULL),
+                                 # numericInput(paste0("y_num_breaks_", tab_id), "Number of Y-axis Breaks:", value = NULL),
+                                 # textInput(paste0("y_break_values_", tab_id), "Y-axis Break Values:", value = NULL)
                                  
                         ),
                         #options for customizing axis labels
-                        tabPanel("Labels and Titles Box",
+                        tabPanel("Labels and Titles",
                                  fluidRow(
                                    #x axis label
-                                   h5("X-axis"),
+                                   h3("X-axis"),
                                    column(width = 6,
                                           numericInput(inputId = paste0("x_axis_text_size_", tab_id), label = "Text size", value = 12),
                                           colourInput(inputId = paste0("x_axis_text_colour_", tab_id), label = "Select text colour", value = "black"),
@@ -96,7 +94,7 @@ plot_modal <- function(tab_id) {
                                           textInput(inputId = paste0("x_axis_text_title_", tab_id), label = "Text title", value = "")
                                    ),
                                    #y axis label
-                                   h5("Y-axis"),
+                                   h3("Y-axis"),
                                    column(width = 6,
                                           numericInput(inputId = paste0("y_axis_text_size_", tab_id), label = "Text size", value = 12),
                                           colourInput(inputId = paste0("y_axis_text_colour_", tab_id), label = "Select text colour", value = "black"),
@@ -108,7 +106,7 @@ plot_modal <- function(tab_id) {
                                    )
                                  )
                         ),
-                        tabPanel("Symbols Box",
+                        tabPanel("Symbols and Box",
                                  #input to change symbol color
                                  column(width = 6,
                                         h3("Symbols"),
@@ -235,13 +233,17 @@ plot_modal <- function(tab_id) {
                                           selectInput(inputId = paste0("correlation_coefficient_text_font_", tab_id), label = "Text fount", choices = c("Arial", "Times New Roman", "Helvetica", "Calibri", "Verdana", "Georgia", "Courier New", "Palatino Linotype"), selected = "Arial")
                                           ),
                                         #for box plots and bar chart
-                                        conditionalPanel(condition = paste0("input.submit_plot_", tab_id," > 0 && (input.choose_", tab_id, " == 'Box-plot' || input.choose_", tab_id, " == 'Raincloud' || input.choose_", tab_id, " == 'Bar Chart' || input.choose_", tab_id, " == 'Violin')"),
-                                                         conditionalPanel(condition = paste0("input.choose_", tab_id, " == 'Box-plot' || input.choose_", tab_id, " == 'Raincloud'"), h3("Box-plot")),
+                                        conditionalPanel(
+                                          condition = paste0("input.submit_plot_", tab_id," > 0 && (input.choose_", tab_id, " == 'Box-plot' || input.choose_", tab_id, " == 'Raincloud' || input.choose_", tab_id, " == 'Bar Chart' || input.choose_", tab_id, " == 'Violin' || '", tab_id, "' == 'superplot')"),
+                                          conditionalPanel(condition = paste0("input.choose_", tab_id, " == 'Box-plot' || input.choose_", tab_id, " == 'Raincloud'"), h3("Box-plot")),
                                                          conditionalPanel(condition = paste0("input.choose_", tab_id, " == 'Bar Chart'"), h3("Bar")),
                                                          conditionalPanel(condition = paste0("input.choose_", tab_id, " == 'Violin'"), h3("Violin")),
+                                                         conditionalPanel(condition = paste0("input.choose_", tab_id, " == 'Scatter'"), h3("Error bar")),
                                                          #select colour group action button
                                                          selectInput(inputId = paste0("geom_boxplot_colour_fill_by_group_", tab_id), label = "", choices = c("Colour by Group", "Single Colour"), selected = "Single Colour"),
-                                                         h6("Border colour"),
+                                                        conditionalPanel(condition = paste0("'", tab_id, "' != 'superplot' && input.choose_", tab_id, " != 'Scatter'"),
+                                                          h6("Border colour")
+                                                          ),
                                                          #input for box line colour
                                                          colourInput(inputId = paste0("box_line_", tab_id), label = "Box line colour", value = "black"),
                                                          #UI input for colour boxplot selection based on grouping variable
@@ -249,7 +251,9 @@ plot_modal <- function(tab_id) {
                                                            style = "max-height: 300px; overflow-y: auto;",
                                                            uiOutput(paste0("colour_boxplot_line_inputs_", tab_id))
                                                            ),
-                                                         h6("Fill colour"),
+                                                        conditionalPanel(condition = paste0("'", tab_id, "' != 'superplot' && input.choose_", tab_id, " != 'Scatter'"),
+                                                         h6("Fill colour")
+                                                         ),
                                                          #input for box fill colour
                                                          colourInput(inputId = paste0("box_fill_", tab_id), label = "Box fill colour", value = "lightblue"),
                                                          #UI input for colour boxplot selection based on grouping variable
@@ -274,7 +278,7 @@ plot_modal <- function(tab_id) {
                                  )
                         ),
                         #options for customizing plot and panel background
-                        tabPanel("Background Box",
+                        tabPanel("Background Panel",
                                  column(width = 6,
                                         h3("Plot background and panel"),
                                         colourInput(inputId = paste0("colour_background_", tab_id), label = "Background colour", value = "white"),
@@ -433,5 +437,4 @@ plot_modal <- function(tab_id) {
               )
             )
   )
-    ##end of modal
 }

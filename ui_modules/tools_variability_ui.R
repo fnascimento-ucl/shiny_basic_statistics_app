@@ -1,10 +1,9 @@
 #Tools for assessing variability components ####################################
 ################################################################################
 tools_variability_ui <- function (){
+  
   #option to display selectable tools to assess variability
   tabPanel("Intraclass correlation & Linear Mixed Models",
-           #adds tabset to Intraclass correlation coefficient
-           #tabsetPanel(
              #adds ICC to Intraclass correlation coefficient
              tabPanel(title = NULL,#"ICC plots",
                       sidebarLayout(
@@ -147,6 +146,7 @@ tools_variability_ui <- function (){
                                            ),
                           )
                         ),
+                        
                         mainPanel(
                           tabsetPanel(
                             id = "tabselected2",
@@ -181,7 +181,7 @@ tools_variability_ui <- function (){
                                      ),
                                      # download buttons
                                      fluidRow(
-                                       downloadButton("download_data_table_icc", "Download table"),
+                                       downloadButton("download_data_table_icc", "Download ICC summary"),
                                        downloadButton("download_plot_icc", "Download plot"),
                                        tableOutput("data_table_icc")
                                      )
@@ -217,7 +217,7 @@ tools_variability_ui <- function (){
                                      ),
                                      # download buttons
                                      fluidRow(
-                                       downloadButton("download_data_table_icc_two_lmm", "Download table"),
+                                       downloadButton("download_data_table_icc_two_lmm", "Download LMM summary"),
                                        downloadButton("download_plot_icc_two", "Download plot"),
                                        tableOutput("data_table_icc_two_lmm")
                                      )
@@ -226,6 +226,5 @@ tools_variability_ui <- function (){
                         )
                       )
              )
-          # )
   )
 }

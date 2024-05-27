@@ -1,6 +1,7 @@
 # Data Selection and visualization module #######################################
 ################################################################################
 data_overview_ui <- function(){
+  
   tabPanel("Data Selection and Visualization",
            # Sidebar with input options
            sidebarLayout(
@@ -11,7 +12,6 @@ data_overview_ui <- function(){
                conditionalPanel(condition = "input.tabselected=='Table & Graph'",
                                 #data upload option
                                 fileInput("data_file", "Choose a file with data"),
-                                # selectInput("selected_sheet_table", "Select sheet", ""),
                                 conditionalPanel(
                                   condition = "output.data_file_uploaded",
                                   #picket for variable selection

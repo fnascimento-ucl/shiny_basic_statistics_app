@@ -1,12 +1,13 @@
 name: basic_statistics_for_basic_neuroscientists
-title:
+title: Basic_statistics_for_basic_neuroscientists
 username: fnascimento-ucl
 account: fnascimento-ucl
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 11191261
-bundleId: 8520212
+bundleId: 8665027
 url: https://fnascimento-ucl.shinyapps.io/basic_statistics_for_basic_neuroscientists/
 version: 1
 asMultiple: FALSE
 asStatic: FALSE
+ignoredFiles: my-select.css
