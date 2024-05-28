@@ -1,3 +1,61 @@
+install.packages("shiny")
+install.packages("readxl")
+install.packages("dplyr")
+install.packages("magrittr")
+install.packages("ICC")
+install.packages("ggplot2")
+install.packages("reshape2")
+install.packages("cowplot")
+install.packages("gridExtra")
+install.packages("ggpp")
+install.packages("shinythemes")
+install.packages("shinyWidgets")
+install.packages("shinyBS")
+install.packages("shinydashboard")
+install.packages("dplyr")
+install.packages("shinydashboardPlus")
+install.packages("shinydisconnect")
+install.packages("reactlog")
+install.packages("plotly")
+install.packages("shinyjs")
+install.packages("shinycssloaders")
+install.packages("ggh4x")
+install.packages("colourpicker")
+install.packages("ggprism")
+install.packages("patchwork")
+install.packages("boot")
+install.packages("randomcoloR")
+install.packages("RColorBrewer")
+install.packages("colorspace")
+install.packages("shinydlplot")##not used?
+install.packages("openxlsx")
+install.packages("ggnewscale")
+install.packages("scales")
+install.packages("ggbreak")# not used yet (for scale breaks)
+install.packages("purrr")
+install.packages("ggExtra")
+install.packages("ggdist") # for raincloudplot
+install.packages("ggbeeswarm") # for raincloudplot
+install.packages("sjPlot") # for obtained HTML table from lmer
+install.packages("sjtable2df") # to convert HTML table
+install.packages("effectsize") # for lmer effect sizes
+install.packages("merDeriv") #for random effect confidence interval
+install.packages("knitr") #for LMM table
+install.packages("kableExtra") #for LMM table
+install.packages("MuMIn") #for getting R squared from LMM
+install.packages("datawizard")
+install.packages("berryFunctions") #to add empty rows
+#library(bslib) #for popovers and tooltips
+install.packages("extrafont")
+install.packages("stringr") # to trim variable name
+install.packages("shinybusy") # to display additional info if server is busy
+install.packages("shinyFeedback")
+install.packages("shinyToastify")
+install.packages("ggpubr")
+install.packages("shinyFiles")
+                 
+
+  
 library(shiny)
 library(readxl)
 library(dplyr)
